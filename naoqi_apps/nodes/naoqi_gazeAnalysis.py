@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 #                                                                             
 #  Copyright 2016 Aldebaran                                                   
 #                                                                             
@@ -16,7 +15,6 @@
 #  limitations under the License.                                             
 #                                                                             
 # 
-
 import rospy
 from std_msgs.msg import Float64MultiArray
 from naoqi_driver.naoqi_node import NaoqiNode
@@ -25,12 +23,14 @@ class NaoqiGazeAnalysis (NaoqiNode):
     def __init__(self):
         NaoqiNode.__init__(self, 'naoqi_gazeAnalysis')
         self.connectNaoQi()
-
         self.gaze_direction = Float64MultiArray()
         self.head_angles = Float64MultiArray()
         self.gazeDirectionPub = rospy.Publisher("gaze_direction", Float64MultiArray, queue_size=10)
         self.headAnglesPub = rospy.Publisher("head_angles", Float64MultiArray, queue_size=10)        
         rospy.loginfo("naoqi_gazeAnalysis is initialized")
+        self.pre_gaze_direction_array = [0.0, 0.0]
+        self.pre_head_angles_array = [0.0, 0.0, 0.0]
+        self.publish_flag = False
 
     def connectNaoQi(self):
         rospy.loginfo("Connecting to NaoQi at %s:%d", self.pip, self.pport)
@@ -41,31 +41,55 @@ class NaoqiGazeAnalysis (NaoqiNode):
     def run(self):
         while self.is_looping():
             try:
-                if self.memProxy.getData("ALBasicAwareness/HumanTracked") != -1:
-                    People_ID = self.memProxy.getData("ALBasicAwareness/HumanTracked")
-                    gaze_direction_event_name = "PeoplePerception/Person/" + str(People_ID) + "/GazeDirection"
-                    head_angles_event_name = "PeoplePerception/Person/" + str(People_ID) + "/HeadAngles"
-                   
-                    if self.memProxy.getData(gaze_direction_event_name):
-                        gaze_direction_array = self.memProxy.getData(gaze_direction_event_name) 
-                        for i in range (len(gaze_direction_array)):
-                            self.gaze_direction.data.append(gaze_direction_array[i]) 
-                        if len(gaze_direction_array) != 0 :
-                            self.gazeDirectionPub.publish(self.gaze_direction)
-                            self.gaze_direction.data = []
+                data_list = self.memProxy.getDataList("ALBasicAwareness")
+                for i in range (len(data_list)):
+                    if data_list[i] == "ALBasicAwareness/HumanTracked":
+                        People_ID = self.memProxy.getData("ALBasicAwareness/HumanTracked")
+                        if People_ID != -1:
+                            gaze_direction_event_name = "PeoplePerception/Person/" + str(People_ID) + "/GazeDirection"
+                            head_angles_event_name = "PeoplePerception/Person/" + str(People_ID) + "/HeadAngles"
+                            
+                            data_list = self.memProxy.getDataList("Person")
+                            for i in range (len(data_list)):
+                                if data_list[i] == gaze_direction_event_name:
+                                    gaze_direction_array = self.memProxy.getData(gaze_direction_event_name)
+                                    if len(gaze_direction_array) > 0:
+                                        for i in range (len(gaze_direction_array)):
+                                            self.gaze_direction.data.append(gaze_direction_array[i]) 
+                                        for i in range (len(gaze_direction_array)):
+                                            if gaze_direction_array[i] != self.pre_gaze_direction_array[i]:
+                                                 self.publish_flag = True
+                                        if self.publish_flag == True:
+                                            self.gazeDirectionPub.publish(self.gaze_direction)
+                                        for i in range (len(gaze_direction_array)):
+                                            self.pre_gaze_direction_array[i] = gaze_direction_array[i] 
+                                        self.gaze_direction_array = []
+                                        self.gaze_direction.data = []
+                                        self.publish_flag = False
+                            
+                            data_list = self.memProxy.getDataList("Person")
+                            for i in range (len(data_list)):
+                                if data_list[i] == head_angles_event_name:
+                                    head_angles_array = self.memProxy.getData(head_angles_event_name)
+                                    if len(head_angles_array) > 0:
+                                        for i in range (len(head_angles_array)):
+                                            self.head_angles.data.append(head_angles_array[i]) 
+                                        for i in range (len(head_angles_array)):
+                                            if head_angles_array[i] != self.pre_head_angles_array[i]:
+                                                self.publish_flag = True
+                                        if self.publish_flag == True:
+                                            self.headAnglesPub.publish(self.head_angles)
+                                        for i in range (len(head_angles_array)):
+                                            self.pre_head_angles_array[i] = head_angles_array[i] 
+                                        self.head_angles_array = []
+                                        self.head_angles.data = []
+                                        self.publish_flag = False
                     
-                    if self.memProxy.getData(gaze_direction_event_name):
-                        head_angles_array = self.memProxy.getData(head_angles_event_name)
-                        for i in range (len(head_angles_array)):
-                            self.head_angles.data.append(head_angles_array[i])
-                        if len(head_angles_array) != 0 :
-                            self.headAnglesPub.publish(self.head_angles)
-                            self.head_angles.data = []
-
             except RuntimeError, e:
-                print "Error accessing ALMemory, exiting...\n"
-                print e
-                rospy.signal_shutdown("No NaoQI available anymore")
+                pass
+                #print "Error accessing ALMemory, exiting...\n"
+                #print e
+                #rospy.signal_shutdown("No NaoQI available anymore")
 
 if __name__ == '__main__':
     gazeAnalysis = NaoqiGazeAnalysis()

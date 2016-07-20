@@ -41,13 +41,14 @@ class NaoqiGazeAnalysis (NaoqiNode):
     def run(self):
         while self.is_looping():
             try:
-                data_list = self.memProxy.getDataList("ALBasicAwareness")
+                data_list = self.memProxy.getDataList("VisiblePeopleList")
                 for i in range (len(data_list)):
-                    if data_list[i] == "ALBasicAwareness/HumanTracked":
-                        People_ID = self.memProxy.getData("ALBasicAwareness/HumanTracked")
-                        if People_ID != -1:
-                            gaze_direction_event_name = "PeoplePerception/Person/" + str(People_ID) + "/GazeDirection"
-                            head_angles_event_name = "PeoplePerception/Person/" + str(People_ID) + "/HeadAngles"
+                    if data_list[i] == "PeoplePerception/VisiblePeopleList":
+                        People_ID = self.memProxy.getData("PeoplePerception/VisiblePeopleList")
+                        #if People_ID != -1:
+                        if (len(People_ID)) > 0:
+                            gaze_direction_event_name = "PeoplePerception/Person/" + str(People_ID[0]) + "/GazeDirection"
+                            head_angles_event_name = "PeoplePerception/Person/" + str(People_ID[0]) + "/HeadAngles"
                             
                             data_list = self.memProxy.getDataList("Person")
                             for i in range (len(data_list)):

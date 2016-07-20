@@ -24,6 +24,7 @@ class NaoqiPeoplePerception (NaoqiNode):
         NaoqiNode.__init__(self, 'naoqi_peoplePerception')
         self.connectNaoQi()
         self.peopleDetected = PeopleDetected()
+        #self.prePeopleDetected = None
         self.peopleDetectedPub = rospy.Publisher("peopleDetected", PeopleDetected, queue_size=10)
         rospy.loginfo("naoqi_peoplePerception is initialized")
        
@@ -38,28 +39,77 @@ class NaoqiPeoplePerception (NaoqiNode):
         while self.is_looping():
             try:
                 r = rospy.Rate(5)
-                PeopleDetectedList = self.memProxy.getData("PeoplePerception/PeopleDetected")
-                self.peopleDetected.header.stamp = rospy.get_rostime()
-                People_list = PeopleDetectedList[1]
-                for i in range(len(People_list)):
-                    One_People = People_list[i]
-                    for i in range(len(One_People)):
-                        self.peopleDetected.people_data.data.append(One_People[i])
-                for i in range(len(PeopleDetectedList[2])):
-                    self.peopleDetected.cameraPose_inTorsoFrame.data.append((PeopleDetectedList[2])[i])
-                for i in range(len(PeopleDetectedList[3])):
-                    self.peopleDetected.cameraPose_inRobotFrame.data.append((PeopleDetectedList[3])[i])
-                self.peopleDetected.camera_id.data = PeopleDetectedList[4]
-               
-                self.peopleDetectedPub.publish(self.peopleDetected)
-                r.sleep()
+                data_list = self.memProxy.getDataList("VisiblePeopleList")
+                for i in range (len(data_list)):
+                    if data_list[i] == "PeoplePerception/VisiblePeopleList":
+                        People_ID = self.memProxy.getData("PeoplePerception/VisiblePeopleList")
+                        if (len(People_ID)) > 0:
+                            distance_event_name = "PeoplePerception/Person/" + str(People_ID[0]) + "/Distance"
+                            angles_yaw_pitch_event_name = "PeoplePerception/Person/" + str(People_ID[0]) + "/AnglesYawPitch"
+                            data_list = self.memProxy.getDataList("Person")
+                            for i in range (len(data_list)):
+                                if data_list[i] == distance_event_name:
+                                    distance = self.memProxy.getData(distance_event_name)
+                                if data_list[i] == angles_yaw_pitch_event_name:
+                                    angles_yaw_pitch = self.memProxy.getData(angles_yaw_pitch_event_name)
+
+                            self.peopleDetected.header.stamp = rospy.get_rostime()
+                            self.peopleDetected.people_id.data = People_ID[0]
+                            if distance:
+                                self.peopleDetected.distance.data = distance
+                                distance = None
+                        
+                            if angles_yaw_pitch:
+                                for i in range (len(angles_yaw_pitch)):
+                                    self.peopleDetected.angles.data.append(angles_yaw_pitch[i])
+                                angles_yaw_pitch = None
+                               
+                            self.peopleDetectedPub.publish(self.peopleDetected)
+
+                            for i in range(len(self.peopleDetected.angles.data)):
+                                del self.peopleDetected.angles.data[0]
+                            self.peopleDetected.people_id.data = None
+                            self.peopleDetected.distance.data =None
+
+                # PeopleDetectedList = self.memProxy.getData("PeoplePerception/PeopleDetected")
+                # print PeopleDetectedList
+                # self.peopleDetected.header.stamp = rospy.get_rostime()
+                # People_list = PeopleDetectedList[1]
+                # for i in range(len(People_list)):
+                #     One_People = People_list[i]
+                #     for i in range(len(One_People)):
+                #         self.peopleDetected.people_data.data.append(One_People[i])
+                # for i in range(len(PeopleDetectedList[2])):
+                #     self.peopleDetected.cameraPose_inTorsoFrame.data.append((PeopleDetectedList[2])[i])
+                # for i in range(len(PeopleDetectedList[3])):
+                #     self.peopleDetected.cameraPose_inRobotFrame.data.append((PeopleDetectedList[3])[i])
+                # self.peopleDetected.camera_id.data = PeopleDetectedList[4]
                 
-                for i in range(len(self.peopleDetected.people_data.data)):
-                    del self.peopleDetected.people_data.data[0]
-                self.peopleDetected.cameraPose_inTorsoFrame.data = []
-                self.peopleDetected.cameraPose_inRobotFrame.data = []
-                self.peopleDetected.camera_id.data = None
-                                    
+                # # data_list = self.memProxy.getDataList("VisiblePeopleList")
+                # # for i in range (len(data_list)):
+                # #     if data_list[i] == "PeoplePerception/VisiblePeopleList":
+                # #         People_ID = self.memProxy.getData("PeoplePerception/VisiblePeopleList")
+                # #      #   if (len(People_ID)) > 0:
+                            
+                # if (self.prePeopleDetected):
+                #     for i in range(len(PeopleDetectedList[1])):
+                #         #print (PeopleDetectedList[1])[i]
+                #         #print self.prePeopleDetected.people_data.data
+                #         if ((PeopleDetectedList[1])[i] != self.prePeopleDetected.people_data.data):
+                #             self.peopleDetectedPub.publish(self.peopleDetected)
+                # else:
+                #     self.peopleDetectedPub.publish(self.peopleDetected)
+                # self.prePeopleDetected = self.peopleDetected
+                # #print self.prePeopleDetected
+                # #print self.peopleDetected
+                # r.sleep()
+                
+                # for i in range(len(self.peopleDetected.people_data.data)):
+                #     del self.peopleDetected.people_data.data[0]
+                # self.peopleDetected.cameraPose_inTorsoFrame.data = []
+                # self.peopleDetected.cameraPose_inRobotFrame.data = []
+                # self.peopleDetected.camera_id.data = None
+                                
             except RuntimeError, e:
                 print "Error accessing ALMemory, exiting...\n"
                 print e

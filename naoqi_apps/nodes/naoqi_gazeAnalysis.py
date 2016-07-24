@@ -17,6 +17,7 @@
 # 
 import rospy
 from std_msgs.msg import Float64MultiArray
+from naoqi_bridge_msgs.msg import IsLookingAtRobot
 from naoqi_driver.naoqi_node import NaoqiNode
 
 class NaoqiGazeAnalysis (NaoqiNode):
@@ -25,8 +26,10 @@ class NaoqiGazeAnalysis (NaoqiNode):
         self.connectNaoQi()
         self.gaze_direction = Float64MultiArray()
         self.head_angles = Float64MultiArray()
+        self.looking_at_robot = IsLookingAtRobot()
         self.gazeDirectionPub = rospy.Publisher("gaze_direction", Float64MultiArray, queue_size=10)
         self.headAnglesPub = rospy.Publisher("head_angles", Float64MultiArray, queue_size=10)        
+        self.lookingAtRobotPub = rospy.Publisher("is_looking_at_robot", IsLookingAtRobot, queue_size=10)
         rospy.loginfo("naoqi_gazeAnalysis is initialized")
         self.pre_gaze_direction_array = [0.0, 0.0]
         self.pre_head_angles_array = [0.0, 0.0, 0.0]
@@ -49,7 +52,7 @@ class NaoqiGazeAnalysis (NaoqiNode):
                         if (len(People_ID)) > 0:
                             gaze_direction_event_name = "PeoplePerception/Person/" + str(People_ID[0]) + "/GazeDirection"
                             head_angles_event_name = "PeoplePerception/Person/" + str(People_ID[0]) + "/HeadAngles"
-                            
+                            is_looking_at_robot_event_name = "PeoplePerception/Person/" + str(People_ID[0]) + "/IsLookingAtRobot"
                             data_list = self.memProxy.getDataList("Person")
                             for i in range (len(data_list)):
                                 if data_list[i] == gaze_direction_event_name:
@@ -85,7 +88,17 @@ class NaoqiGazeAnalysis (NaoqiNode):
                                         self.head_angles_array = []
                                         self.head_angles.data = []
                                         self.publish_flag = False
-                    
+                            
+                            data_list = self.memProxy.getDataList("IsLookingAtRobot")
+                            for i in range (len(data_list)):
+                                if data_list[i] == is_looking_at_robot_event_name:
+                                    is_looking_at_robot = self.memProxy.getData(is_looking_at_robot_event_name)
+                                    self.looking_at_robot.header.stamp = rospy.get_rostime()
+                                    self.looking_at_robot.people = People_ID[0]
+                                    self.looking_at_robot.is_looking_at_robot = is_looking_at_robot
+                                    self.lookingAtRobotPub.publish(self.looking_at_robot)
+                                    
+                                    
             except RuntimeError, e:
                 pass
                 #print "Error accessing ALMemory, exiting...\n"

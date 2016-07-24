@@ -111,9 +111,10 @@ class NaoqiPeoplePerception (NaoqiNode):
                 # self.peopleDetected.camera_id.data = None
                                 
             except RuntimeError, e:
-                print "Error accessing ALMemory, exiting...\n"
-                print e
-                rospy.signal_shutdown("No NaoQI available anymore")
+                pass
+                #print "Error accessing ALMemory, exiting...\n"
+                #print e
+                #rospy.signal_shutdown("No NaoQI available anymore")
 
 if __name__ == '__main__':
     peoplePerception = NaoqiPeoplePerception()

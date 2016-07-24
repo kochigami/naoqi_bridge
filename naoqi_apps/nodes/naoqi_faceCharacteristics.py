@@ -45,15 +45,18 @@ class NaoqiFaceCharacteristics (NaoqiNode):
     def run(self):
         while self.is_looping():
             try:
-                data_list = self.memProxy.getDataList("ALBasicAwareness")
+                data_list = self.memProxy.getDataList("VisiblePeopleList")
                 for i in range (len(data_list)):
-                    if data_list[i] == "ALBasicAwareness/HumanTracked":
-                        People_ID = self.memProxy.getData("ALBasicAwareness/HumanTracked")
-                        if People_ID != -1:
-                            smile_event_name = "PeoplePerception/Person/" + str(People_ID) + "/SmileProperties"
-                            expression_event_name = "PeoplePerception/Person/" + str(People_ID) + "/ExpressionProperties"
-                            self.faceC.analyzeFaceCharacteristics(People_ID)
-                            data_list = self.memProxy.getDataList("Person")
+                    if data_list[i] == "PeoplePerception/VisiblePeopleList":
+                        People_ID = self.memProxy.getData("PeoplePerception/VisiblePeopleList")
+                        if (len(People_ID)) > 0:
+                            smile_event_name = "PeoplePerception/Person/" + str(People_ID[0]) + "/SmileProperties"
+                            expression_event_name = "PeoplePerception/Person/" + str(People_ID[0]) + "/ExpressionProperties"
+                            self.faceC.analyzeFaceCharacteristics(People_ID[0])
+                            #data_list = self.memProxy.getDataList("Person")
+                            data_list = self.memProxy.getDataList(str(People_ID[0]))
+                           
+                            #print data_list
                             for i in range (len(data_list)):
                                 if data_list[i] == smile_event_name:
                                     smile_array = self.memProxy.getData(smile_event_name) 

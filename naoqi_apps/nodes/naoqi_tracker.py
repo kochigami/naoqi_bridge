@@ -64,11 +64,11 @@ class NaoqiTracker (NaoqiNode):
 
     def handleStartTrackerSrv (self, req = None):
         try:
-            print self.conf
             #self.trackerProxy.registerTarget(self.targetName, self.People_ID)
             self.trackerProxy.registerTarget(self.targetName, self.conf["width"])
             self.trackerProxy.setEffector(self.conf["effector"])
             self.trackerProxy.setRelativePosition([(- self.conf["distanceX"]), self.conf["distanceY"], self.conf["distanceWz"], self.conf["thresholdX"], self.conf["thresholdY"], self.conf["thresholdWz"]]) 
+
             self.trackerProxy.setMode(self.conf["mode"])
             self.trackerProxy.track(self.targetName) #Start tracker
             self.tracker = True
@@ -155,10 +155,9 @@ class NaoqiTracker (NaoqiNode):
 
         #If we have enabled the tracker wrapper, reconfigure it     
         if need_to_restart_tracker:
+            self.conf = newConf
             self.handleStopTrackerSrv()
             self.handleStartTrackerSrv()
-        self.conf = newConf
-        print self.conf
         return self.conf
 
     def run(self):
@@ -168,14 +167,13 @@ class NaoqiTracker (NaoqiNode):
                 self.memProxy.subscribeToEvent("ALTracker/TargetReached", self.moduleName, "onTargetReached")
                 self.subscribeDone = True
                 
-                data_list = self.memProxy.getDataList("PeoplePerception")
-                for i in range (len(data_list)):
-                    if data_list[i] == "PeoplePerception/VisiblePeopleList":
-                        People_ID_list = self.memProxy.getData("PeoplePerception/VisiblePeopleList")
-                        if (len(People_ID_list)) > 0:
-                            self.People_ID = People_ID_list[0]
-                            self.trackerProxy.registerTarget(self.targetName, self.People_ID)
-                            
+                # data_list = self.memProxy.getDataList("PeoplePerception")
+                # for i in range (len(data_list)):
+                #     if data_list[i] == "PeoplePerception/VisiblePeopleList":
+                #         People_ID_list = self.memProxy.getData("PeoplePerception/VisiblePeopleList")
+                #         if (len(People_ID_list)) > 0:
+                #             self.People_ID = People_ID_list[0]
+                #self.trackerProxy.registerTarget(self.targetName, self.People_ID)
                 self.memProxy.subscribeToEvent("ALTracker/ActiveTargetChanged", self.moduleName, "onTargetChanged")
                         
             except RuntimeError, e:
@@ -185,21 +183,20 @@ class NaoqiTracker (NaoqiNode):
 
     def onTargetChanged(self, key, value, message):
         if value == self.targetName and not self.subscribeDone:
-            print "aaa"
-            self.memoProxy.subscribeToEvent("ALTracker/TargetLost", self.moduleName, "onTargetLost")
+            self.memProxy.subscribeToEvent("ALTracker/TargetLost", self.moduleName, "onTargetLost")
             self.memProxy.subscribeToEvent("ALTracker/TargetReached", self.moduleName, "onTargetReached")
             self.subscribeDone = True
         elif value != self.targetName and self.subscribeDone:
-            print "bbb"
             self.memProxy.unsubscribeToEvent("ALTracker/TargetLost", self.moduleName)
             self.memProxy.unsubscribeToEvent("ALTracker/TargetReached", self.moduleName)
             self.subscribeDone = False
-
+    
+    # need to modify
     def onTargetLost(self, key, value, message):
         self.targetLost.data = True
         self.targetLostPub.publish(self.targetLost)
         print "target is lost"
-
+    # need to modify
     def onTargetReached(self, key, value, message):
         self.targetReached.data = True
         self.targetReachedPub.publish(self.targetReached)

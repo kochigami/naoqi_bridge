@@ -44,7 +44,7 @@ class NaoqiGazeAnalysis (NaoqiNode):
     def run(self):
         while self.is_looping():
             try:
-                data_list = self.memProxy.getDataList("VisiblePeopleList")
+                data_list = self.memProxy.getDataList("PeoplePerception/VisiblePeopleList")
                 if (len(data_list)) > 0:
                     for i in range (len(data_list)):
                         if data_list[i] == "PeoplePerception/VisiblePeopleList":

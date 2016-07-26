@@ -31,7 +31,7 @@ class NaoqiTracker (NaoqiNode):
         self.connectNaoQi()
         self.moduleName = "Tracker"
         self.subscribeDone = False
-        #self.People_ID = None
+        self.People_ID = None
         self.targetName = "Face" #"People" 
         self.mode = "Head" 
         self.effector = "None"      
@@ -64,8 +64,11 @@ class NaoqiTracker (NaoqiNode):
 
     def handleStartTrackerSrv (self, req = None):
         try:
-            #self.trackerProxy.registerTarget(self.targetName, self.People_ID)
-            self.trackerProxy.registerTarget(self.targetName, self.conf["width"])
+            self.targetName = self.conf["targetName"]
+            if self.targetName == "People":
+                self.trackerProxy.registerTarget(self.targetName, self.People_ID)
+            if self.targetName == "Face":
+                self.trackerProxy.registerTarget(self.targetName, self.conf["width"])
             self.trackerProxy.setEffector(self.conf["effector"])
             self.trackerProxy.setRelativePosition([(- self.conf["distanceX"]), self.conf["distanceY"], self.conf["distanceWz"], self.conf["thresholdX"], self.conf["thresholdY"], self.conf["thresholdWz"]]) 
 
@@ -100,6 +103,7 @@ class NaoqiTracker (NaoqiNode):
         newConf = {}
         #Copy values
         newConf["mode"] = request["mode"]
+        newConf["targetName"] = request["targetName"]
         newConf["effector"] = request["effector"]
         newConf["width"] = request["width"]
         newConf["distanceX"] = request["distanceX"]
@@ -118,6 +122,14 @@ class NaoqiTracker (NaoqiNode):
                     newConf["mode"] ) )
             rospy.loginfo("Modes available: {}".format(
                 self.trackerProxy.getAvailablModes()))
+            newConf["mode"] = self.trackerProxy.getMode()
+        if not newConf["targetName"]:
+            newConf["targetName"] = self.trackerProxy.getActiveTarget()
+        elif newConf["targetName"] not in ["RedBall", "Face", "LandMark", "LandMarks", "People", "Sound"]:
+            rospy.logwarn(
+                "Unknown target name '{}'. Using current targte name instead".format(
+                    newConf["targetName"] ) )
+            rospy.loginfo("Target Names available: RedBall, Face, LandMark, LandMarks, People, Sound")
             newConf["mode"] = self.trackerProxy.getMode()
         if not newConf["effector"]:
             newConf["effector"] = self.trackerProxy.getEffector()
@@ -140,6 +152,7 @@ class NaoqiTracker (NaoqiNode):
         #  Check if we need to restart tracker
         if self.tracker and self.conf and (
                 newConf["mode"] != self.conf["mode"] or
+                newConf["targetName"] != self.conf["targetName"] or
                 newConf["effector"] != self.conf["effector"] or
                 newConf["width"] != self.conf["width"] or
                 newConf["distanceX"] != self.conf["distanceX"] or
@@ -167,13 +180,14 @@ class NaoqiTracker (NaoqiNode):
                 self.memProxy.subscribeToEvent("ALTracker/TargetReached", self.moduleName, "onTargetReached")
                 self.subscribeDone = True
                 
-                # data_list = self.memProxy.getDataList("PeoplePerception")
-                # for i in range (len(data_list)):
-                #     if data_list[i] == "PeoplePerception/VisiblePeopleList":
-                #         People_ID_list = self.memProxy.getData("PeoplePerception/VisiblePeopleList")
-                #         if (len(People_ID_list)) > 0:
-                #             self.People_ID = People_ID_list[0]
-                #self.trackerProxy.registerTarget(self.targetName, self.People_ID)
+                if self.targetName == "People":
+                    data_list = self.memProxy.getDataList("PeoplePerception")
+                    for i in range (len(data_list)):
+                        if data_list[i] == "PeoplePerception/VisiblePeopleList":
+                            People_ID_list = self.memProxy.getData("PeoplePerception/VisiblePeopleList")
+                            if (len(People_ID_list)) > 0:
+                                self.People_ID = People_ID_list[0]
+                                self.trackerProxy.registerTarget(self.targetName, self.People_ID)
                 self.memProxy.subscribeToEvent("ALTracker/ActiveTargetChanged", self.moduleName, "onTargetChanged")
                         
             except RuntimeError, e:

@@ -45,58 +45,59 @@ class NaoqiGazeAnalysis (NaoqiNode):
         while self.is_looping():
             try:
                 data_list = self.memProxy.getDataList("VisiblePeopleList")
-                for i in range (len(data_list)):
-                    if data_list[i] == "PeoplePerception/VisiblePeopleList":
-                        People_ID = self.memProxy.getData("PeoplePerception/VisiblePeopleList")
-                        #if People_ID != -1:
-                        if (len(People_ID)) > 0:
-                            gaze_direction_event_name = "PeoplePerception/Person/" + str(People_ID[0]) + "/GazeDirection"
-                            head_angles_event_name = "PeoplePerception/Person/" + str(People_ID[0]) + "/HeadAngles"
-                            is_looking_at_robot_event_name = "PeoplePerception/Person/" + str(People_ID[0]) + "/IsLookingAtRobot"
-                            data_list = self.memProxy.getDataList("Person")
-                            for i in range (len(data_list)):
-                                if data_list[i] == gaze_direction_event_name:
-                                    gaze_direction_array = self.memProxy.getData(gaze_direction_event_name)
-                                    if len(gaze_direction_array) > 0:
-                                        for i in range (len(gaze_direction_array)):
-                                            self.gaze_direction.data.append(gaze_direction_array[i]) 
-                                        for i in range (len(gaze_direction_array)):
-                                            if gaze_direction_array[i] != self.pre_gaze_direction_array[i]:
-                                                 self.publish_flag = True
-                                        if self.publish_flag == True:
-                                            self.gazeDirectionPub.publish(self.gaze_direction)
-                                        for i in range (len(gaze_direction_array)):
-                                            self.pre_gaze_direction_array[i] = gaze_direction_array[i] 
-                                        self.gaze_direction_array = []
-                                        self.gaze_direction.data = []
-                                        self.publish_flag = False
+                if (len(data_list)) > 0:
+                    for i in range (len(data_list)):
+                        if data_list[i] == "PeoplePerception/VisiblePeopleList":
+                            People_ID = self.memProxy.getData("PeoplePerception/VisiblePeopleList")
+                            #if People_ID != -1:
+                            if (len(People_ID)) > 0:
+                                gaze_direction_event_name = "PeoplePerception/Person/" + str(People_ID[0]) + "/GazeDirection"
+                                head_angles_event_name = "PeoplePerception/Person/" + str(People_ID[0]) + "/HeadAngles"
+                                is_looking_at_robot_event_name = "PeoplePerception/Person/" + str(People_ID[0]) + "/IsLookingAtRobot"
+                                data_list = self.memProxy.getDataList("Person")
+                                for i in range (len(data_list)):
+                                    if data_list[i] == gaze_direction_event_name:
+                                        gaze_direction_array = self.memProxy.getData(gaze_direction_event_name)
+                                        if len(gaze_direction_array) > 0:
+                                            for i in range (len(gaze_direction_array)):
+                                                self.gaze_direction.data.append(gaze_direction_array[i]) 
+                                            for i in range (len(gaze_direction_array)):
+                                                if gaze_direction_array[i] != self.pre_gaze_direction_array[i]:
+                                                    self.publish_flag = True
+                                            if self.publish_flag == True:
+                                                self.gazeDirectionPub.publish(self.gaze_direction)
+                                            for i in range (len(gaze_direction_array)):
+                                                self.pre_gaze_direction_array[i] = gaze_direction_array[i] 
+                                            self.gaze_direction_array = []
+                                            self.gaze_direction.data = []
+                                            self.publish_flag = False
                             
-                            data_list = self.memProxy.getDataList("Person")
-                            for i in range (len(data_list)):
-                                if data_list[i] == head_angles_event_name:
-                                    head_angles_array = self.memProxy.getData(head_angles_event_name)
-                                    if len(head_angles_array) > 0:
-                                        for i in range (len(head_angles_array)):
-                                            self.head_angles.data.append(head_angles_array[i]) 
-                                        for i in range (len(head_angles_array)):
-                                            if head_angles_array[i] != self.pre_head_angles_array[i]:
-                                                self.publish_flag = True
-                                        if self.publish_flag == True:
-                                            self.headAnglesPub.publish(self.head_angles)
-                                        for i in range (len(head_angles_array)):
-                                            self.pre_head_angles_array[i] = head_angles_array[i] 
-                                        self.head_angles_array = []
-                                        self.head_angles.data = []
-                                        self.publish_flag = False
+                                data_list = self.memProxy.getDataList("Person")
+                                for i in range (len(data_list)):
+                                    if data_list[i] == head_angles_event_name:
+                                        head_angles_array = self.memProxy.getData(head_angles_event_name)
+                                        if len(head_angles_array) > 0:
+                                            for i in range (len(head_angles_array)):
+                                                self.head_angles.data.append(head_angles_array[i]) 
+                                            for i in range (len(head_angles_array)):
+                                                if head_angles_array[i] != self.pre_head_angles_array[i]:
+                                                    self.publish_flag = True
+                                            if self.publish_flag == True:
+                                                self.headAnglesPub.publish(self.head_angles)
+                                            for i in range (len(head_angles_array)):
+                                                self.pre_head_angles_array[i] = head_angles_array[i] 
+                                            self.head_angles_array = []
+                                            self.head_angles.data = []
+                                            self.publish_flag = False
                             
-                            data_list = self.memProxy.getDataList("IsLookingAtRobot")
-                            for i in range (len(data_list)):
-                                if data_list[i] == is_looking_at_robot_event_name:
-                                    is_looking_at_robot = self.memProxy.getData(is_looking_at_robot_event_name)
-                                    self.looking_at_robot.header.stamp = rospy.get_rostime()
-                                    self.looking_at_robot.people = People_ID[0]
-                                    self.looking_at_robot.is_looking_at_robot = is_looking_at_robot
-                                    self.lookingAtRobotPub.publish(self.looking_at_robot)
+                                data_list = self.memProxy.getDataList("IsLookingAtRobot")
+                                for i in range (len(data_list)):
+                                    if data_list[i] == is_looking_at_robot_event_name:
+                                        is_looking_at_robot = self.memProxy.getData(is_looking_at_robot_event_name)
+                                        self.looking_at_robot.header.stamp = rospy.get_rostime()
+                                        self.looking_at_robot.people = People_ID[0]
+                                        self.looking_at_robot.is_looking_at_robot = is_looking_at_robot
+                                        self.lookingAtRobotPub.publish(self.looking_at_robot)
                                     
                                     
             except RuntimeError, e:

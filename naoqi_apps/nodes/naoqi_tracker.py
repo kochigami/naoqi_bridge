@@ -46,9 +46,11 @@ class NaoqiTracker (NaoqiNode):
         self.startTrackerSrv = rospy.Service("start_tracker", Empty, self.handleStartTrackerSrv)
         self.stopTrackerSrv = rospy.Service("stop_tracker", Empty, self.handleStopTrackerSrv)
         self.targetLostPub = rospy.Publisher("target_lost", Bool, queue_size=10)
+        self.isTargetLostPub = rospy.Publisher("is_target_lost", Bool, queue_size=10)
         self.targetReachedPub = rospy.Publisher("target_reached", Bool, queue_size=10)
         self.targetLost = Bool()
         self.targetReached = Bool()
+        self.isTargetLost = Bool()
         
         rospy.loginfo("naoqi_tracker is initialized")
         
@@ -179,7 +181,11 @@ class NaoqiTracker (NaoqiNode):
                 self.memProxy.subscribeToEvent("ALTracker/TargetLost", self.moduleName, "onTargetLost")
                 self.memProxy.subscribeToEvent("ALTracker/TargetReached", self.moduleName, "onTargetReached")
                 self.subscribeDone = True
-                
+
+                if self.tracker:
+                    self.isTargetLost.data = self.trackerProxy.isTargetLost()
+                    self.isTargetLostPub.publish(self.isTargetLost)
+
                 if self.targetName == "People":
                     data_list = self.memProxy.getDataList("PeoplePerception")
                     for i in range (len(data_list)):

@@ -22,6 +22,8 @@ from std_msgs.msg import String
 from std_srvs.srv import (
     EmptyResponse,
     Empty)
+from naoqi_bridge_msgs.msg import (
+    MoveFailed,)
 from naoqi_bridge_msgs.srv import ( 
     TangentialSecurityDistanceResponse,
     TangentialSecurityDistance, 
@@ -38,11 +40,11 @@ class NaoqiExternalCollisionAvoidance(NaoqiNode):
         self.connectNaoQi()
         
         # init. messages:
-        self.moveFailed = String()
-        self.previousMoveFailedInfomation = ""
+        self.moveFailed = MoveFailed()
+        self.previousMoveFailed = ""
         self.setOrthogonalSecurityDistanceSrv = rospy.Service("set_orthogonal_distance", OrthogonalSecurityDistance, self.handleSetOrthogonalSecurityDistanceSrv)
         self.setTangentialSecurityDistanceSrv = rospy.Service("set_tangential_distance", TangentialSecurityDistance, self.handleSetTangentialSecurityDistanceSrv)
-        self.getMoveFailedInformationSrv = rospy.Service("move_failed_information", Empty, self.handleMoveFailedInformationSrv)
+        self.moveFailedPub = rospy.Publisher("move_failed", MoveFailed, queue_size=10)
         self.setOrthogonalSecurityDistanceSrv = rospy.Service("get_orthogonal_distance", Empty, self.handleGetOrthogonalSecurityDistanceSrv)
         self.setTangentialSecurityDistanceSrv = rospy.Service("get_tangential_distance", Empty, self.handleGetTangentialSecurityDistanceSrv)
         self.setExternalCollisionProtectionEnabledSrv = rospy.Service("set_external_collision_protection_status", SetExternalCollisionProtectionEnabled, self.handleSetExternalCollisionProtectionEnabled)
@@ -98,19 +100,6 @@ class NaoqiExternalCollisionAvoidance(NaoqiNode):
             rospy.logerr("Exception caught:\n%s", e)
             return None
 
-    def handleMoveFailedInformationSrv(self, req):
-        if self.memProxy.getData("ALMotion/MoveFailed") != self.previousMoveFailedInfomation:
-            moveFailedData = self.memProxy.getData("ALMotion/MoveFailed")
-            self.previousMoveFailedInformation = moveFailedData
-            moveFailedMessage = "I CANNOT MOVE\n Cause of move failed: " + moveFailedData[0]
-            if moveFailedData[1] == 0:
-                moveFailedMessage  += ", Status: move not started" 
-            if moveFailedData[1] == 1:
-                moveFailedMessage += ", Status: move started but stopped" 
-            moveFailedMessage += ", Obstacle position: "+ str(moveFailedData[2])
-            rospy.loginfo(moveFailedMessage)
-            return EmptyResponse()
-
     def handleSetExternalCollisionProtectionEnabled(self, req):
         try:
             if req.name.data == 0:
@@ -161,7 +150,18 @@ class NaoqiExternalCollisionAvoidance(NaoqiNode):
     def run(self):
         while self.is_looping():
             try:
-                pass
+                moveFailedData = self.memProxy.getData("ALMotion/MoveFailed")
+                if moveFailedData != self.previousMoveFailed:
+                    self.moveFailed.header.stamp = rospy.get_rostime()
+                    self.moveFailed.cause = moveFailedData[0]
+                    self.moveFailed.status = moveFailedData[1]
+                    self.moveFailed.obstacle_position.data = []
+                    if moveFailedData[2]:
+                        for i in range (len(moveFailedData[2])):
+                            self.moveFailed.obstacle_position.data.append((moveFailedData[2])[i])
+                    self.moveFailedPub.publish(self.moveFailed)
+                self.previousMoveFailed = moveFailedData
+
             except RuntimeError, e:
                 print "Error accessing ALMemory and ALMotion, exiting...\n"
                 print e

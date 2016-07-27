@@ -19,8 +19,10 @@
 import rospy
 from naoqi_driver.naoqi_node import NaoqiNode
 from naoqi_bridge_msgs.srv import ( 
-     SetArmsEnabledResponse,
-     SetArmsEnabled,)
+    SetArmsEnabledResponse,
+    SetArmsEnabled,
+    MoveIsActiveResponse,
+    MoveIsActive,)
 
 class NaoqiMotion(NaoqiNode):
     def __init__(self):
@@ -29,6 +31,7 @@ class NaoqiMotion(NaoqiNode):
         
         self.setArmsEnabledSrv = rospy.Service("set_move_arms_enabled", SetArmsEnabled, self.handleSetMoveArmsEnabledSrv)
         ##self.getArmsEnabledSrv = rospy.Service("get_move_arms_enabled", SetArmsEnabled, self.handleGetMoveArmsEnabledSrv)
+        self.moveIsActiveSrv = rospy.Service("move_is_active", MoveIsActive, self.handleMoveIsActiveSrv)
         rospy.loginfo("naoqi_motion initialized")
 
     def connectNaoQi(self):
@@ -46,7 +49,15 @@ class NaoqiMotion(NaoqiNode):
         except RuntimeError, e:
             rospy.logerr("Exception caught:\n%s", e)
             return None
-        
+    def handleMoveIsActiveSrv(self, req):
+        try:
+            res = MoveIsActiveResponse()
+            res.status = self.motionProxy.moveIsActive()
+            return  res
+        except RuntimeError, e:
+            rospy.logerr("Exception caught:\n%s", e)
+            return None
+
     def run(self):
         while self.is_looping():
             try:

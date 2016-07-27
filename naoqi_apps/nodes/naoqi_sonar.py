@@ -32,8 +32,8 @@ class NaoqiSonar (NaoqiNode):
         self.backSonarPub = rospy.Publisher("back_sonar", Float64, queue_size=10)    
         
         # http://doc.aldebaran.com/2-4/naoqi/sensors/alsonar.html says we should subscribe ALSonar module to turn on sonar, but sonar seems to work without executing it
-        # self.startSonarSrv = rospy.Service("start_sonar", Empty, self.handleStartSonarSrv)
-        # self.stopSonarSrv = rospy.Service("stop_sonar", Empty, self.handleStopSonarSrv)
+        self.startSonarSrv = rospy.Service("start_sonar", Empty, self.handleStartSonarSrv)
+        self.stopSonarSrv = rospy.Service("stop_sonar", Empty, self.handleStopSonarSrv)
         rospy.loginfo("naoqi_sonar is initialized")
 
     def connectNaoQi(self):
@@ -46,23 +46,23 @@ class NaoqiSonar (NaoqiNode):
         if self.sonarProxy is None:
             exit(1)
 
-    # def handleStartSonarSrv (self, req):
-    #     try:
-    #         self.sonarProxy.subscribe("naoqi_sonar_application")
-    #         return EmptyResponse()
+    def handleStartSonarSrv (self, req):
+        try:
+            self.sonarProxy.subscribe("naoqi_sonar_application")
+            return EmptyResponse()
 
-    #     except RuntimeError, e:
-    #         rospy.logerr("Exception caught:\n%s", e)
-    #         return None
+        except RuntimeError, e:
+            rospy.logerr("Exception caught:\n%s", e)
+            return None
 
-    # def handleStopSonarSrv (self, req):
-    #     try:
-    #         self.sonarProxy.unsubscribe("naoqi_sonar_application")
-    #         return EmptyResponse()
+    def handleStopSonarSrv (self, req):
+        try:
+            self.sonarProxy.unsubscribe("naoqi_sonar_application")
+            return EmptyResponse()
 
-    #     except RuntimeError, e:
-    #         rospy.logerr("Exception caught:\n%s", e)
-    #         return None
+        except RuntimeError, e:
+            rospy.logerr("Exception caught:\n%s", e)
+            return None
 
     def run(self):
         while self.is_looping():

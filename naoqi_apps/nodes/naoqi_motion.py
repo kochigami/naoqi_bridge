@@ -24,7 +24,9 @@ from naoqi_bridge_msgs.srv import (
     MoveIsActiveResponse,
     MoveIsActive,
     GetStiffnessesResponse,
-    GetStiffnesses)
+    GetStiffnesses,
+    SetStiffnessesResponse,
+    SetStiffnesses)
 
 class NaoqiMotion(NaoqiNode):
     def __init__(self):
@@ -36,6 +38,7 @@ class NaoqiMotion(NaoqiNode):
         ##self.getArmsEnabledSrv = rospy.Service("get_move_arms_enabled", SetArmsEnabled, self.handleGetMoveArmsEnabledSrv)
         self.moveIsActiveSrv = rospy.Service("move_is_active", MoveIsActive, self.handleMoveIsActiveSrv)
         self.getStiffnessesSrv = rospy.Service("get_stiffnesses", GetStiffnesses, self.handleGetStiffnessesSrv)
+        self.setStiffnessesSrv = rospy.Service("set_stiffnesses", SetStiffnesses, self.handleSetStiffnessesSrv)
         rospy.loginfo("naoqi_motion initialized")
 
     def connectNaoQi(self):
@@ -57,6 +60,17 @@ class NaoqiMotion(NaoqiNode):
         except RuntimeError, e:
             rospy.logerr("Exception caught:\n%s", e)
             return None
+
+    def handleSetStiffnessesSrv(self, req):
+        try:
+            #jointName = self.jointName_key[req.joint_name.name]
+            status = self.motionProxy.setStiffnesses(req.joint_name, req.stiffness)
+            return SetStiffnessesResponse()
+
+        except RuntimeError, e:
+            rospy.logerr("Exception caught:\n%s", e)
+            return None
+
 
     def handleSetMoveArmsEnabledSrv(self, req):
         try:

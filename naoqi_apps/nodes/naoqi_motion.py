@@ -22,16 +22,20 @@ from naoqi_bridge_msgs.srv import (
     SetArmsEnabledResponse,
     SetArmsEnabled,
     MoveIsActiveResponse,
-    MoveIsActive,)
+    MoveIsActive,
+    GetStiffnessesResponse,
+    GetStiffnesses)
 
 class NaoqiMotion(NaoqiNode):
     def __init__(self):
         NaoqiNode.__init__(self, 'naoqi_motion')
         self.connectNaoQi()
         
+        self.jointName_key = ["Body", "JointActuators", "Joints", "Actuators"]
         self.setArmsEnabledSrv = rospy.Service("set_move_arms_enabled", SetArmsEnabled, self.handleSetMoveArmsEnabledSrv)
         ##self.getArmsEnabledSrv = rospy.Service("get_move_arms_enabled", SetArmsEnabled, self.handleGetMoveArmsEnabledSrv)
         self.moveIsActiveSrv = rospy.Service("move_is_active", MoveIsActive, self.handleMoveIsActiveSrv)
+        self.getStiffnessesSrv = rospy.Service("get_stiffnesses", GetStiffnesses, self.handleGetStiffnessesSrv)
         rospy.loginfo("naoqi_motion initialized")
 
     def connectNaoQi(self):
@@ -40,7 +44,20 @@ class NaoqiMotion(NaoqiNode):
         self.motionProxy = self.get_proxy("ALMotion")
         if self.memProxy is None or self.motionProxy is None:
             exit(1)
-        
+    
+    def handleGetStiffnessesSrv(self, req):
+        try:
+            res = GetStiffnessesResponse()
+            jointName = self.jointName_key[req.joint_name.name]
+            status = self.motionProxy.getStiffnesses(jointName)
+            for i in range(len(status)):
+                res.status.data.append(status[i])
+            return res
+
+        except RuntimeError, e:
+            rospy.logerr("Exception caught:\n%s", e)
+            return None
+
     def handleSetMoveArmsEnabledSrv(self, req):
         try:
             self.motionProxy.setMoveArmsEnabled(req.left_arm, req.right_arm)

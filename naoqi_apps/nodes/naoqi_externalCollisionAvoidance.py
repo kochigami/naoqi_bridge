@@ -160,7 +160,7 @@ class NaoqiExternalCollisionAvoidance(NaoqiNode):
                         for i in range (len(moveFailedData[2])):
                             self.moveFailed.obstacle_position.data.append((moveFailedData[2])[i])
                     self.moveFailedPub.publish(self.moveFailed)
-                self.previousMoveFailed = moveFailedData
+                    self.previousMoveFailed = moveFailedData
 
             except RuntimeError, e:
                 print "Error accessing ALMemory and ALMotion, exiting...\n"

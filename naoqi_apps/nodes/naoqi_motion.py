@@ -26,7 +26,9 @@ from naoqi_bridge_msgs.srv import (
     GetStiffnessesResponse,
     GetStiffnesses,
     SetStiffnessesResponse,
-    SetStiffnesses)
+    SetStiffnesses,
+    GetRobotPositionResponse,
+    GetRobotPosition,)
 
 class NaoqiMotion(NaoqiNode):
     def __init__(self):
@@ -39,6 +41,7 @@ class NaoqiMotion(NaoqiNode):
         self.moveIsActiveSrv = rospy.Service("move_is_active", MoveIsActive, self.handleMoveIsActiveSrv)
         self.getStiffnessesSrv = rospy.Service("get_stiffnesses", GetStiffnesses, self.handleGetStiffnessesSrv)
         self.setStiffnessesSrv = rospy.Service("set_stiffnesses", SetStiffnesses, self.handleSetStiffnessesSrv)
+        self.getRobotPositionSrv = rospy.Service("get_robot_position", GetRobotPosition, self.handleGetRobotPosition)
         rospy.loginfo("naoqi_motion initialized")
 
     def connectNaoQi(self):
@@ -85,6 +88,18 @@ class NaoqiMotion(NaoqiNode):
             res = MoveIsActiveResponse()
             res.status = self.motionProxy.moveIsActive()
             return  res
+        except RuntimeError, e:
+            rospy.logerr("Exception caught:\n%s", e)
+            return None
+
+    def handleGetRobotPosition(self, req):
+        try:
+            getRobotPosition = self.motionProxy.getRobotPosition(req.use_sensors_values)
+            res = GetRobotPositionResponse()
+            res.robot_position.linear.x = getRobotPosition[0]
+            res.robot_position.linear.y = getRobotPosition[1]
+            res.robot_position.angular.z = getRobotPosition[2]
+            return res
         except RuntimeError, e:
             rospy.logerr("Exception caught:\n%s", e)
             return None

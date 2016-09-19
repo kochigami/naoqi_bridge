@@ -86,26 +86,32 @@ class NaoqiExternalCollisionAvoidance(NaoqiNode):
             
     def handleSetOrthogonalSecurityDistance(self, req):
         try:
+            res = SetOrthogonalSecurityDistanceResponse()
             if (req.orthogonal_distance > 0.001 or req.orthogonal_distance == 0.001):
                 self.motionProxy.setOrthogonalSecurityDistance(req.orthogonal_distance)
                 rospy.loginfo("Orthogonal security distance is set to " + str(req.orthogonal_distance))
-                return SetOrthogonalSecurityDistanceResponse()
+                res.success = True
+                return res
             else:
                 rospy.loginfo("Orthogonal security distance should be 0.001, or more than 0.001")
-                return SetOrthogonalSecurityDistanceResponse()
+                res.success = False
+                return res
         except RuntimeError, e:
             rospy.logerr("Exception caught:\n%s", e)
             return None
         
     def handleSetTangentialSecurityDistance(self, req):
         try:
+            res = SetTangentialSecurityDistanceResponse()
             if (req.tangential_distance > 0.001 or req.tangential_distance == 0.001):
                 self.motionProxy.setTangentialSecurityDistance(req.tangential_distance)
                 rospy.loginfo("Tangential security distance is set to " + str(req.tangential_distance))
-                return SetTangentialSecurityDistanceResponse()
+                res.success = True
+                return res
             else:
                 rospy.loginfo("Tangential distance should be 0.001, or more than 0.001")
-                return SetTangentialSecurityDistanceResponse()
+                res.success = False
+                return res
         except RuntimeError, e:
             rospy.logerr("Exception caught:\n%s", e)
             return None

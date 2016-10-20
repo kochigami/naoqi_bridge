@@ -17,8 +17,12 @@
 # 
 import rospy
 from naoqi_driver.naoqi_node import NaoqiNode
-#from std_msgs.msg import ()
-#from naoqi_bridge_msgs.msg import PeopleDetected
+from std_msgs.msg import (
+    String,
+    Bool)
+from naoqi_bridge_msgs.msg import (
+    WordRecognized,
+    WordRecognizedAndGrammar)
 from std_srvs.srv import (
      EmptyResponse,
      Empty)
@@ -76,7 +80,12 @@ class NaoqiSpeechRecognition (NaoqiNode):
     def __init__(self):
         NaoqiNode.__init__(self, 'naoqi_speechRecognition')
         self.connectNaoQi()
-        #self.peopleListPub = rospy.Publisher("PeoplePerception/PeopleList", Int64MultiArray, queue_size=10)
+        self.wordRecognizedPub = rospy.Publisher("word_recognized", WordRecognized, queue_size=10)
+        self.wordRecognizedAndGrammarPub = rospy.Publisher("word_recognized_and_grammar", WordRecognizedAndGrammar, queue_size=10)
+        self.speechDetectedPub = rospy.Publisher("speech_detected", Bool, queue_size=10)
+        self.isRunningPub = rospy.Publisher("ALSpeechRecognition/IsRunning", Bool, queue_size=10)
+        self.statusPub = rospy.Publisher("ALSpeechRecognition/Status", String, queue_size=10)
+        self.activeListeningPub = rospy.Publisher("ALSpeechRecognition/ActiveListening", Bool, queue_size=10)
         #services
         self.getAvailableLanguagesSrv = rospy.Service("get_available_languages", GetAvailableLanguages, self.handleGetAvailableLanguages)
         self.getLanguageSrv = rospy.Service("get_language", GetLanguage, self.handleGetLanguage)
@@ -167,7 +176,7 @@ class NaoqiSpeechRecognition (NaoqiNode):
     def handleGetAudioExpression(self, req):        
         try:
             res = GetAudioExpressionResponse()
-            res.enableOrNot = self.srProxy.getAudioExpression()
+            res.setOrNot = self.srProxy.getAudioExpression()
             return res
         except RuntimeError, e:
             rospy.logerr("Exception caught:\n%s", e)
@@ -390,12 +399,44 @@ class NaoqiSpeechRecognition (NaoqiNode):
     def run(self):
         while self.is_looping():
             try:
-                pass
-                # JustArrived
-                # just_arrived_msg = Int64()
-                # just_arrived_msg.data = self.memProxy.getData("PeoplePerception/JustArrived")
-                # if just_arrived_msg.data != None:
-                #     self.justArrivedPub.publish(just_arrived_msg)
+                # WordRecognized
+                word_recognized_msg = WordRecognized()
+                word_recognized_data = self.memProxy.getData("WordRecognized")
+                if (len (word_recognized_data) > 0) :
+                    for i in range ((len(word_recognized_data))/ 2):
+                        word_recognized_msg.words.append(word_recognized_data[2 * i])
+                        word_recognized_msg.confidence_values.append(word_recognized_data[2 * i + 1])
+                    self.wordRecognizedPub.publish(word_recognized_msg)
+
+                # WordRecognizedAndGrammar
+                word_recognized_and_grammar_msg = WordRecognizedAndGrammar()
+                word_recognized_and_grammar_data = self.memProxy.getData("WordRecognizedAndGrammar")
+                if (len (word_recognized_and_grammar_data) > 0) :
+                    for i in range ((len(word_recognized_data)) / 3):
+                        word_recognized_msg.words.append(word_recognized_data[3 * i])
+                        word_recognized_msg.confidence_values.append(word_recognized_data[3 * i + 1])
+                        word_recognized_msg.grammars.append(word_recognized_data[3 * i + 2])
+                    self.wordRecognizedAndGrammarPub.publish(word_recognized_and_grammar_msg)
+
+                # SpeechDetected
+                speech_detected_msg = Bool()
+                speech_detected_msg.data = self.memProxy.getData("SpeechDetected")
+                self.speechDetectedPub.publish(speech_detected_msg)
+
+                # ALSpeechRecognition/IsRunning
+                is_running_msg = Bool()
+                is_running_msg.data = self.memProxy.getData("ALSpeechRecognition/IsRunning")
+                self.isRunningPub.publish(is_running_msg)
+
+                # ALSpeechRecognition/Status
+                status_msg = String()
+                status_msg.data = self.memProxy.getData("ALSpeechRecognition/Status")
+                self.statusPub.publish(status_msg)
+
+                # ALSpeechRecognition/ActiveListening
+                active_listening_msg = Bool()
+                active_listening_msg.data = self.memProxy.getData("ALSpeechRecognition/ActiveListening")
+                self.activeListeningPub.publish(active_listening_msg)
 
             except RuntimeError, e:
                  print "Error accessing ALMemory, exiting...\n"

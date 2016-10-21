@@ -114,7 +114,6 @@ class NaoqiSpeechRecognition (NaoqiNode):
         self.subscribeSrv = rospy.Service("start_speech_recognition", Empty, self.handleStartSpeechRecognition)
         self.unsubscribeSrv = rospy.Service("stop_speech_recognition", Empty, self.handleStopSpeechRecognition)
         
-
         rospy.loginfo("naoqi_speech_recognition is initialized")
        
     def connectNaoQi(self):
@@ -357,15 +356,13 @@ class NaoqiSpeechRecognition (NaoqiNode):
             return res
             
     def handleGetRules(self, req):
-        res = GetRulesResponse()
-        res.success = False
         try:
-            self.srProxy.getRules(req.contextName, req.typeName)
-            res.success = True
+            res = GetRulesResponse()
+            res.rules = self.srProxy.getRules(req.contextName, req.typeName)
             return res
         except RuntimeError, e:
             rospy.logerr("Exception caught:\n%s", e)
-            return res
+            return None
 
     def handlePause(self, req):
         res = PauseResponse()

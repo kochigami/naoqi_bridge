@@ -237,11 +237,12 @@ class NaoqiEngagementZones(NaoqiNode):
                 People_ID = self.memProxy.getData("PeoplePerception/VisiblePeopleList")
                 if (len(People_ID)) > 0:
                     for i in range(len(People_ID)):
-                        engagement_zone_by_person_msg = EngagementZoneOfPerson()
-                        engagement_zone_by_person_msg.people_id = People_ID[i]
-                        engagement_zone_by_person_msg.engagement_zone = self.memProxy.getData("PeoplePerception/Person/" + str(People_ID[i]) + "/EngagementZone")
-                        
-                        self.engagementZoneByPersonPub.publish(engagement_zone_by_person_msg)
+                        data_list = self.memProxy.getDataList("PeoplePerception/Person/" + str(People_ID[i]) + "/EngagementZone")
+                        if (len(data_list) > 0):
+                            engagement_zone_by_person_msg = EngagementZoneOfPerson()
+                            engagement_zone_by_person_msg.engagement_zone = self.memProxy.getData("PeoplePerception/Person/" + str(People_ID[i]) + "/EngagementZone")
+                            engagement_zone_by_person_msg.people_id = People_ID[i]
+                            self.engagementZoneByPersonPub.publish(engagement_zone_by_person_msg)
                         
                 # "EngagementZones/PeopleInZone1"
                 people_in_zone1_msg = Int64MultiArray()
@@ -377,7 +378,7 @@ class NaoqiEngagementZones(NaoqiNode):
 
                         
             except RuntimeError, e:
-                print "Error accessing ALMemory and ALMotion, exiting...\n"
+                print "Error accessing ALMemory, exiting...\n"
                 print e
                 rospy.signal_shutdown("No NaoQI available anymore")
 

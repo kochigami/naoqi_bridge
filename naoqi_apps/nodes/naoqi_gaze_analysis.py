@@ -127,7 +127,7 @@ class NaoqiGazeAnalysis (NaoqiNode):
                 # GazeAnalysis/PeopleLookingAtRobot
                 data_list = self.memProxy.getData("GazeAnalysis/PeopleLookingAtRobot")
                 people_looking_at_robot_msg = Int64MultiArray()
-                if (len(data_list)) > 0:
+                if data_list != None and (len(data_list)) > 0:
                     for i in range(len(data_list)):
                         people_looking_at_robot_msg.data.append(data_list[i])
                     self.peopleLookingAtRobotPub.publish(people_looking_at_robot_msg)

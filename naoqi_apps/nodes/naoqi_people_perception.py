@@ -73,13 +73,13 @@ class NaoqiPeoplePerception (NaoqiNode):
         self.getTimeBeforeVisiblePersonDisappearsSrv = rospy.Service("get_time_before_visible_person_disappears", GetTimeBeforeVisiblePersonDisappears , self.handleGetTimeBeforeVisiblePersonDisappears)
         self.isFaceDetectionEnabledSrv = rospy.Service("is_face_detection_enabled", IsFaceDetectionEnabled, self.handleIsFaceDetectionEnabled)
         self.isFastModeEnabledSrv = rospy.Service("get_fast_mode_enabled", IsFastModeEnabled, self.handleIsFastModeEnabled)
-        self.isGraphicalDisplayEnabledSrv = rospy.Service("is_graphical_display_enabled", IsGraphicalDisplayEnabled, self.handleIsGraphicalDisplayEnabled)
+        self.isGraphicalDisplayEnabledSrv = rospy.Service("get_graphical_display_enabled", IsGraphicalDisplayEnabled, self.handleIsGraphicalDisplayEnabled)
         self.isMovementDetectionEnabledSrv = rospy.Service("get_movement_detection_enabled", IsMovementDetectionEnabled, self.handleIsMovementDetectionEnabled)
         self.resetPopulationSrv = rospy.Service("reset_population", Empty, self.handleResetPopulation)
         self.setFastModeEnabledSrv = rospy.Service("set_fast_mode_enabled", SetFastModeEnabled, self.handleSetFastModeEnabled)
         self.setGraphicalDisplayEnabledSrv = rospy.Service("set_graphical_display_enabled", SetGraphicalDisplayEnabled, self.handleSetGraphicalDisplayEnabled)
         self.setMaximumDetectionRangeSrv = rospy.Service("set_maximum_detection_range_enabled", SetMaximumDetectionRange, self.handleSetMaximumDetectionRange)
-        self.setMovementDetectionEnabledSrv = rospy.Service("set_move_detection_enabled", SetMovementDetectionEnabled, self.handleSetMovementDetectionEnabled)
+        self.setMovementDetectionEnabledSrv = rospy.Service("set_movement_detection_enabled", SetMovementDetectionEnabled, self.handleSetMovementDetectionEnabled)
         self.setTimeBeforePersonDisappearsSrv = rospy.Service("set_time_before_person_disappears", SetTimeBeforePersonDisappears, self.handleSetTimeBeforePersonDisappears)
         self.setTimeBeforeVisiblePersonDisappearsSrv = rospy.Service("set_time_before_visible_person_disappears", SetTimeBeforeVisiblePersonDisappears, self.handleSetTimeBeforeVisiblePersonDisappears)
         rospy.loginfo("naoqi_peoplePerception is initialized")
@@ -246,7 +246,7 @@ class NaoqiPeoplePerception (NaoqiNode):
 
                 # PeopleDetected
                 people_detected_list = self.memProxy.getData("PeoplePerception/PeopleDetected")
-                if (len (people_detected_list[1]) > 0) and people_detected_list[1] != self.pre_people_detected_list:
+                if (len (people_detected_list) > 0) and people_detected_list[1] != self.pre_people_detected_list:
                     for i in range (len (people_detected_list[1])):
                         people_detected_msg = PeopleDetected()
                         people_detected_msg.header.stamp = rospy.get_rostime()

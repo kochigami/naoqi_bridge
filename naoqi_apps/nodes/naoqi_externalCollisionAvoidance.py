@@ -198,7 +198,7 @@ class NaoqiExternalCollisionAvoidance(NaoqiNode):
                     self.moveFailedPub.publish(self.moveFailed)
                     self.previousMoveFailed = moveFailedData
                 chainVelocityClippedData = self.memProxy.getData("ALMotion/Safety/ChainVelocityClipped")
-                if chainVelocityClippedData != self.previousChainVelocityClipped:
+                if chainVelocityClippedData != None and chainVelocityClippedData != self.previousChainVelocityClipped:
                     for i in range(len(chainVelocityClippedData)):
                         self.chainVelocityClipped.header.stamp = rospy.get_rostime()
                         self.chainVelocityClipped.chain = (chainVelocityClippedData[i])[0]

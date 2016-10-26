@@ -246,7 +246,7 @@ class NaoqiPeoplePerception (NaoqiNode):
 
                 # PeopleDetected
                 people_detected_list = self.memProxy.getData("PeoplePerception/PeopleDetected")
-                if (len (people_detected_list) > 0) and people_detected_list[1] != self.pre_people_detected_list:
+                if people_detected_list != None and (len (people_detected_list) > 0) and people_detected_list[1] != self.pre_people_detected_list:
                     for i in range (len (people_detected_list[1])):
                         people_detected_msg = PeopleDetected()
                         people_detected_msg.header.stamp = rospy.get_rostime()
@@ -351,7 +351,7 @@ class NaoqiPeoplePerception (NaoqiNode):
                                 people_detected_msg.hsv.z = shirt_color_hsv[2]
                             
                         self.peopleDetectedPub.publish(people_detected_msg)
-                self.pre_people_detected_list = people_detected_list[1]
+                        self.pre_people_detected_list = people_detected_list[1]
 
                 # Population Updated
                 population_updated_msg = Bool()

@@ -351,7 +351,7 @@ class NaoqiPeoplePerception (NaoqiNode):
                                 people_detected_msg.hsv.z = shirt_color_hsv[2]
                             
                         self.peopleDetectedPub.publish(people_detected_msg)
-                        self.pre_people_detected_list = people_detected_list[1]
+                    self.pre_people_detected_list = people_detected_list[1]
 
                 # Population Updated
                 population_updated_msg = Bool()

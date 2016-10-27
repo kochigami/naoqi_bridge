@@ -16,211 +16,705 @@
 #                                                                             
 # 
 import rospy
-from dynamic_reconfigure.server import Server as ReConfServer
-import dynamic_reconfigure.client
-from naoqi_apps.cfg import NaoqiTrackerConfig as NodeConfig # todo
-from std_msgs.msg import Bool
 from naoqi_driver.naoqi_node import NaoqiNode
-from std_srvs.srv import (
+from std_srvs.srv import(
     EmptyResponse,
     Empty)
+from naoqi_bridge_msgs.srv import(
+    GetActiveTargetResponse,
+    GetActiveTarget,
+    GetAvailableModesResponse,
+    GetAvailableModes,
+    GetEffectorResponse,
+    GetEffector,
+    GetExtractorPeriodResponse,
+    GetExtractorPeriod,    
+    GetMaximumAccelerationResponse,
+    GetMaximumAcceleration,
+    GetMaximumDistanceDetectionResponse,
+    GetMaximumDistanceDetection,
+    GetMaximumVelocityResponse,
+    GetMaximumVelocity,
+    GetModeResponse,
+    GetMode,
+    ALTrackerGetMoveConfigResponse,
+    ALTrackerGetMoveConfig,
+    GetRegisteredTargetsResponse,
+    GetRegisteredTargets,
+    GetRelativePositionResponse,
+    GetRelativePosition,
+    ALTrackerGetRobotPositionResponse,
+    ALTrackerGetRobotPosition,
+    GetSearchFractionMaxSpeedResponse,
+    GetSearchFractionMaxSpeed,
+    GetSupportedTargetsResponse,
+    GetSupportedTargets,
+    #GetTargetCoordinatesResponse,
+    #GetTargetCoordinates,
+    GetTargetPositionResponse,
+    GetTargetPosition,
+    GetTimeOutResponse,
+    GetTimeOut,
+    IsActiveResponse,
+    IsActive,
+    IsNewTargetDetectedResponse,
+    IsNewTargetDetected,
+    IsSearchEnabledResponse,
+    IsSearchEnabled,
+    IsTargetLostResponse,
+    IsTargetLost,
+    LookAtResponse,
+    LookAt,
+    PointAtResponse,
+    PointAt,
+    SetEffectorResponse,
+    SetEffector,
+    SetExtractorPeriodResponse,
+    SetExtractorPeriod,
+    SetMaximumAccelerationResponse,
+    SetMaximumAcceleration,
+    SetMaximumDistanceDetectionResponse,
+    SetMaximumDistanceDetection,
+    SetMaximumVelocityResponse,
+    SetMaximumVelocity,
+    SetModeResponse,
+    SetMode,
+    SetMoveConfigResponse,
+    SetMoveConfig,
+    SetRelativePositionResponse,
+    SetRelativePosition,
+    SetSearchFractionMaxSpeedResponse,
+    SetSearchFractionMaxSpeed,
+    SetTimeOutResponse,
+    SetTimeOut,
+    TrackResponse,
+    Track,
+    ToggleSearchResponse,
+    ToggleSearch,
+    UnregisterTargetResponse,
+    UnregisterTarget,
+    UnregisterTargetsResponse,
+    UnregisterTargets,
+    RegisterRedBallResponse,
+    RegisterRedBall,
+    RegisterFaceResponse,
+    RegisterFace,
+    RegisterLandMarkResponse,
+    RegisterLandMark,
+    RegisterLandMarksResponse,
+    RegisterLandMarks,
+    RegisterPeopleResponse,
+    RegisterPeople,
+    RegisterSoundResponse,
+    RegisterSound,
+    #RegisterTargetResponse,
+    #RegisterTarget,
+    #SetTargetCoordinatesResponse,
+    #SetTargetCoordinates,
+    #TrackEventResponse,
+    #TrackEvent,
+)
 
 class NaoqiTracker (NaoqiNode):
     def __init__(self):
         NaoqiNode.__init__(self, 'naoqi_tracker')
         self.connectNaoQi()
-        self.moduleName = "Tracker"
-        self.subscribeDone = False
-        self.People_ID = None
-        self.targetName = "Face" #"People" 
-        self.mode = "Head" 
-        self.effector = "None"      
-        self.conf = None
-        self.tracker = False
-        # Start reconfigure server  
-        self.reconf_server = ReConfServer(NodeConfig, self.reconfigure)
-        # Client for receiving the new information                             
-        self.reconf_client = dynamic_reconfigure.client.Client("naoqi_tracker")
-
-        
-        self.startTrackerSrv = rospy.Service("start_tracker", Empty, self.handleStartTrackerSrv)
-        self.stopTrackerSrv = rospy.Service("stop_tracker", Empty, self.handleStopTrackerSrv)
-        self.targetLostPub = rospy.Publisher("target_lost", Bool, queue_size=10)
-        self.isTargetLostPub = rospy.Publisher("is_target_lost", Bool, queue_size=10)
-        self.targetReachedPub = rospy.Publisher("target_reached", Bool, queue_size=10)
-        self.targetLost = Bool()
-        self.targetReached = Bool()
-        self.isTargetLost = Bool()
-        
+        self.getActiveTargetSrv = rospy.Service("get_active_target", GetActiveTarget, self.handleGetActiveTarget)
+        self.getAvailableModesSrv = rospy.Service("get_available_modes", GetAvailableModes, self.handleGetAvailableModes)
+        self.getEffectorSrv = rospy.Service("get_effector", GetEffector, self.handleGetEffector)
+        self.getExtractorPeriodSrv = rospy.Service("get_extractor_period", GetExtractorPeriod, self.handleGetExtractorPeriod)
+        self.getMaximumAccelerationSrv = rospy.Service("get_maximum_acceleration", GetMaximumAcceleration, self.handleGetMaximumAcceleration)
+        self.getMaximumDistanceDetectionSrv = rospy.Service("get_maximum_distance_detection", GetMaximumDistanceDetection, self.handleGetMaximumDistanceDetection)
+        self.getMaximumVelocitySrv = rospy.Service("get_maximum_velocity", GetMaximumVelocity, self.handleGetMaximumVelocity)
+        self.getModeSrv = rospy.Service("get_mode", GetMode, self.handleGetMode)
+        self.getMoveConfigSrv = rospy.Service("tracker_get_move_config", ALTrackerGetMoveConfig, self.handleGetMoveConfig)
+        self.getRegisteredTargetsSrv = rospy.Service("get_registered_targets", GetRegisteredTargets, self.handleGetRegisteredTargets)
+        self.getRelativePositionSrv = rospy.Service("get_relative_position", GetRelativePosition, self.handleGetRelativePosition)
+        self.getRobotPositionSrv = rospy.Service("get_robot_position", ALTrackerGetRobotPosition, self.handleGetRobotPosition)
+        self.getSearchFractionMaxSpeedSrv = rospy.Service("get_search_fraction_max_speed", GetSearchFractionMaxSpeed, self.handleGetSearchFractionMaxSpeed)
+        self.getSupportedTargetsSrv = rospy.Service("get_supported_targets", GetSupportedTargets, self.handleGetSupportedTargets)
+        #self.getTargetCoordinatesSrv = rospy.Service("get_target_coordinates", , self.handleGetTargetCoordinates)
+        self.getTargetPositionSrv = rospy.Service("get_target_position", GetTargetPosition, self.handleGetTargetPosition)
+        self.getTimeOutSrv = rospy.Service("get_time_out", GetTimeOut, self.handleGetTimeOut)
+        self.initializeSrv = rospy.Service("initialize", Empty, self.handleInitialize)
+        self.isNewTargetDetectedSrv = rospy.Service("is_new_target_detected", IsNewTargetDetected, self.handleIsNewTargetDetected)
+        self.isSearchEnabledSrv = rospy.Service("is_search_enabled", IsSearchEnabled, self.handleIsSearchEnabled)
+        self.isTargetLostSrv = rospy.Service("is_target_lost", IsTargetLost, self.handleIsTargetLost)
+        self.lookAtSrv = rospy.Service("look_at", LookAt, self.handleLookAt)
+        self.pointAtSrv = rospy.Service("point_at", PointAt, self.handlePointAt)
+        ##self.registerTargetSrv = rospy.Service("register_target", , self.handleRegisterTarget)
+        self.registerRedBallSrv = rospy.Service("register_red_ball", RegisterRedBall, self.handleRegisterRedBall)
+        self.registerFaceSrv = rospy.Service("register_face", RegisterFace, self.handleRegisterFace)
+        self.registerLandMarkSrv = rospy.Service("register_land_mark", RegisterLandMark, self.handleRegisterLandMark)
+        self.registerLandMarksSrv = rospy.Service("register_land_marks", RegisterLandMarks, self.handleRegisterLandMarks)
+        self.registerPeopleSrv = rospy.Service("register_people", RegisterPeople, self.handleRegisterPeople)
+        self.registerSoundSrv = rospy.Service("register_sound", RegisterSound, self.handleRegisterSound)
+        self.setEffectorSrv = rospy.Service("set_effector", SetEffector, self.handleSetEffector)
+        self.setExtractorPeriodSrv = rospy.Service("set_extractor_period", SetExtractorPeriod, self.handleSetExtractorPeriod)
+        self.setMaximumAccelerationSrv = rospy.Service("set_maximum_acceleration", SetMaximumAcceleration, self.handleSetMaximumAcceleration)
+        self.setMaximumDistanceDetectionSrv = rospy.Service("set_maximum_distance_detection", SetMaximumDistanceDetection, self.handleSetMaximumDistanceDetection)
+        self.setMaximumVelocitySrv = rospy.Service("set_maximum_velocity", SetMaximumVelocity, self.handleSetMaximumVelocity)
+        self.setModeSrv = rospy.Service("set_mode", SetMode, self.handleSetMode)
+        self.setMoveConfigSrv = rospy.Service("set_move_config", SetMoveConfig, self.handleSetMoveConfig)
+        self.setRelativePositionSrv = rospy.Service("set_relative_position", SetRelativePosition, self.handleSetRelativePosition)
+        self.setSearchFractionMaxSpeedSrv = rospy.Service("set_search_fraction_max_speed", SetSearchFractionMaxSpeed, self.handleSetSearchFractionMaxSpeed)
+        #self.setTargetCoordinatesSrv = rospy.Service("set_target_coordinates", , self.handleSetTargetCoordinates)
+        self.setTimeOutSrv = rospy.Service("set_time_out", SetTimeOut, self.handleSetTimeOut)
+        self.stopTrackerSrv = rospy.Service("stop_tracker", Empty, self.handleStopTracker)
+        self.trackSrv = rospy.Service("track", Track, self.handleTrack)
+        #self.trackEventSrv = rospy.Service("track_event", , self.handleTrackEvent)
+        self.toggleSearchSrv = rospy.Service("toggle_search", ToggleSearch, self.handleToggleSearch)
+        self.unregisterAllTargetsSrv = rospy.Service("unregister_all_targets", Empty, self.handleUnregisterAllTargets)
+        self.unregisterTargetSrv = rospy.Service("unregister_target", UnregisterTarget, self.handleUnregisterTarget)
+        self.unregisterTargetsSrv = rospy.Service("unregister_targets", UnregisterTargets, self.handleUnregisterTargets)
         rospy.loginfo("naoqi_tracker is initialized")
-        
+       
     def connectNaoQi(self):
         rospy.loginfo("Connecting to NaoQi at %s:%d", self.pip, self.pport)
-        self.memProxy = self.get_proxy("ALMemory")
         self.trackerProxy = self.get_proxy("ALTracker")
-        
-        if self.memProxy is None:
-            exit(1)
         if self.trackerProxy is None:
             exit(1)
-
-    def handleStartTrackerSrv (self, req = None):
+    
+    def handleGetActiveTarget(self, req):
         try:
-            self.targetName = self.conf["targetName"]
-            if self.targetName == "People":
-                self.trackerProxy.registerTarget(self.targetName, self.People_ID)
-            if self.targetName == "Face":
-                self.trackerProxy.registerTarget(self.targetName, self.conf["width"])
-            self.trackerProxy.setEffector(self.conf["effector"])
-            self.trackerProxy.setRelativePosition([(- self.conf["distanceX"]), self.conf["distanceY"], self.conf["distanceWz"], self.conf["thresholdX"], self.conf["thresholdY"], self.conf["thresholdWz"]]) 
-
-            self.trackerProxy.setMode(self.conf["mode"])
-            self.trackerProxy.track(self.targetName) #Start tracker
-            self.tracker = True
-            return EmptyResponse()
-
+            res = GetActiveTargetResponse()
+            res.active_target = self.trackerProxy.getActiveTarget()
+            return res
         except RuntimeError, e:
             rospy.logerr("Exception caught:\n%s", e)
             return None
 
-    def handleStopTrackerSrv (self, req = None):
+    def handleGetAvailableModes(self, req):
         try:
-            if self.subscribeDone:
-                self.memProxy.unsubscribeToEvent("ALTracker/TargetLost", self.moduleName)
-                self.memProxy.unsubscribeToEvent("ALTracker/TargetReached", self.moduleName)
-                self.subscribeDone = False
-            self.trackerProxy.setEffector("None")
+            res = GetAvailableModesResponse()
+            data_list = self.trackerProxy.getActiveTarget()
+            if data_list != None and (len(data_list) > 0):
+                for i in range(len(data_list)):
+                    res.available_modes.append(data_list[i]) 
+            return res
+        except RuntimeError, e:
+            rospy.logerr("Exception caught:\n%s", e)
+            return None
+
+    def handleGetEffector(self, req):
+        try:
+            res = GetEffectorResponse()
+            res.active_effector = self.trackerProxy.getEffector()
+            return res
+        except RuntimeError, e:
+            rospy.logerr("Exception caught:\n%s", e)
+            return None
+
+    def handleGetExtractorPeriod(self, req):
+        try:
+            res = GetExtractorPeriodResponse()
+            res.extractor_period = self.trackerProxy.getExtractorPeriod(req.target_name)
+            return res
+        except RuntimeError, e:
+            rospy.logerr("Exception caught:\n%s", e)
+            return None
+
+    def handleGetMaximumAcceleration(self, req):
+        try:
+            res = GetMaximumAccelerationResponse()
+            res.maximum_acceleration = self.trackerProxy.getMaximumAcceleration()
+            return res
+        except RuntimeError, e:
+            rospy.logerr("Exception caught:\n%s", e)
+            return None
+
+    def handleGetMaximumDistanceDetection(self, req):
+        try:
+            res = GetMaximumDistanceDetectionResponse()
+            res.maximum_distance = self.trackerProxy.getMaximumDistanceDetection()
+            return res
+        except RuntimeError, e:
+            rospy.logerr("Exception caught:\n%s", e)
+            return None
+
+    def handleGetMaximumVelocity(self, req):
+        try:
+            res = GetMaximumVelocityResponse()
+            res.maximum_velocity = self.trackerProxy.getMaximumVelocity()
+            return res
+        except RuntimeError, e:
+            rospy.logerr("Exception caught:\n%s", e)
+            return None
+
+    def handleGetMode(self, req):
+        try:
+            res = GetModeResponse()
+            res.active_mode = self.trackerProxy.getMode()
+            return res
+        except RuntimeError, e:
+            rospy.logerr("Exception caught:\n%s", e)
+            return None
+
+    def handleGetMoveConfig(self, req):
+        try:
+            res = ALTrackerGetMoveConfigResponse()
+            data_list = self.trackerProxy.getMoveConfig()
+            res.move_config.max_vel_xy = (data_list[0])[1]
+            res.move_config.max_vel_theta = (data_list[1])[1]
+            res.move_config.max_acc_xy = (data_list[2])[1]
+            res.move_config.max_acc_theta = (data_list[3])[1]
+            res.move_config.max_jerk_xy = (data_list[4])[1]
+            res.move_config.max_jerk_theta = (data_list[5])[1]
+            res.move_config.torso_wy = (data_list[6])[1]
+            return res
+        except RuntimeError, e:
+            rospy.logerr("Exception caught:\n%s", e)
+            return None
+
+    def handleGetRegisteredTargets(self, req):
+        try:
+            res = GetRegisteredTargetsResponse()
+            data_list = self.trackerProxy.getRegisteredTargets()
+            if data_list != None and (len(data_list) > 0):
+                for i in range(len(data_list)):
+                    res.registered_targets.append(data_list[i]) 
+            return res
+        except RuntimeError, e:
+            rospy.logerr("Exception caught:\n%s", e)
+            return None
+
+    def handleGetRelativePosition(self, req):
+        try:
+            res = GetRelativePositionResponse()
+            data_list = self.trackerProxy.getRelativePosition()
+            res.target_position.linear.x = data_list[0]
+            res.target_position.linear.y = data_list[1]
+            res.target_position.linear.z = data_list[2]
+            res.target_position.angular.x = data_list[3]
+            res.target_position.angular.y = data_list[4]
+            res.target_position.angular.z = data_list[5]
+            return res
+        except RuntimeError, e:
+            rospy.logerr("Exception caught:\n%s", e)
+            return None
+
+    def handleGetRobotPosition(self, req):
+        try:
+            res = ALTrackerGetRobotPositionResponse()
+            data_list = self.trackerProxy.getRobotPosition()
+            res.robot_position.linear.x = data_list[0]
+            res.robot_position.linear.y = data_list[1]
+            res.robot_position.linear.z = data_list[2]
+            res.robot_position.angular.x = data_list[3]
+            res.robot_position.angular.y = data_list[4]
+            res.robot_position.angular.z = data_list[5]
+            return res
+        except RuntimeError, e:
+            rospy.logerr("Exception caught:\n%s", e)
+            return None
+
+    def handleGetSearchFractionMaxSpeed(self, req):
+        try:
+            res = GetSearchFractionMaxSpeedResponse()
+            res.fraction_max_speed = self.trackerProxy.getSearchFractionMaxSpeed()
+            return res
+        except RuntimeError, e:
+            rospy.logerr("Exception caught:\n%s", e)
+            return None
+
+    def handleGetSupportedTargets(self, req):
+        try:
+            res = GetSupportedTargetsResponse()
+            res.supported_target_names = self.trackerProxy.getSupportedTargets()
+            return res
+        except RuntimeError, e:
+            rospy.logerr("Exception caught:\n%s", e)
+            return None
+
+   # def handleGetTargetCoordinates(self, req):
+   #      try:
+   #          res = GetTargetCoordinatesResponse()
+   #          data_list = self.trackerProxy.getTargetCoordinates()
+   #          res.first_object_coordinate.x = data_list[0][0]
+   #          res.first_object_coordinate.y = data_list[0][1]
+   #          res.first_object_coordinate.z = data_list[0][2]
+   #          res.second_object_coordinate.x = data_list[1][0]
+   #          res.second_object_coordinate.y = data_list[1][1]
+   #          res.second_object_coordinate.z = data_list[1][2]
+   #          return res
+   #      except RuntimeError, e:
+   #          rospy.logerr("Exception caught:\n%s", e)
+   #          return None
+
+    def handleGetTargetPosition(self, req):
+        try:
+            res = GetTargetPositionResponse()
+            data_list = self.trackerProxy.getTargetPosition(req.frame.data)
+            res.target_position.x = data_list[0]
+            res.target_position.y = data_list[1]
+            res.target_position.z = data_list[2]
+            return res
+        except RuntimeError, e:
+            rospy.logerr("Exception caught:\n%s", e)
+            return None
+
+    def handleGetTimeOut(self, req):
+        try:
+            res = GetTimeOutResponse()
+            res.timeout = self.trackerProxy.getTimeOut()
+            return res
+        except RuntimeError, e:
+            rospy.logerr("Exception caught:\n%s", e)
+            return None
+
+    def handleInitialize(self, req):
+        try:
+            res = EmptyResponse()
+            self.trackerProxy.initialize()
+            return res
+        except RuntimeError, e:
+            rospy.logerr("Exception caught:\n%s", e)
+            return None
+
+    def handleIsActive(self, req):
+        try:
+            res = IsActiveResponse()
+            res.status = self.trackerProxy.isActive()
+            return res
+        except RuntimeError, e:
+            rospy.logerr("Exception caught:\n%s", e)
+            return None
+
+    def handleIsNewTargetDetected(self, req):
+        try:
+            res = IsNewTargetDetectedResponse()
+            res.status = self.trackerProxy.isNewTargetDetected()
+            return res
+        except RuntimeError, e:
+            rospy.logerr("Exception caught:\n%s", e)
+            return None
+
+    def handleIsSearchEnabled(self, req):
+        try:
+            res = IsSearchEnabledResponse()
+            res.status = self.trackerProxy.isSearchEnabled()
+            return res
+        except RuntimeError, e:
+            rospy.logerr("Exception caught:\n%s", e)
+            return None
+
+    def handleIsTargetLost(self, req):
+        try:
+            res = IsTargetLostResponse()
+            res.status = self.trackerProxy.isTargetLost()
+            return res
+        except RuntimeError, e:
+            rospy.logerr("Exception caught:\n%s", e)
+            return None
+
+    def handleLookAt(self, req):
+        res = LookAtResponse()
+        res.success = False
+        try:
+            position = []
+            position[0] = req.position.x
+            position[1] = req.position.y
+            position[2] = req.position.z
+            self.trackerProxy.lookAt(position, req.frame, req.fraction_max_frame, req.use_whole_body)
+            res.success = True
+            return res
+        except RuntimeError, e:
+            rospy.logerr("Exception caught:\n%s", e)
+            return res
+
+    def handlePointAt(self, req):
+        res = PointAtResponse()
+        res.success = False
+        try:
+            if req.arm.data == 0:
+                arm = "LArm"
+            elif req.arm.data == 1:
+                arm = "RArm"
+            else:
+                arm = "Arms"
+            position = []
+            position[0] = req.position.x
+            position[1] = req.position.y
+            position[2] = req.position.z
+            self.trackerProxy.pointAt(arm, position, req.frame, req.fraction_max_frame)
+            res.success = True
+            return res
+        except RuntimeError, e:
+            rospy.logerr("Exception caught:\n%s", e)
+            return res
+
+    def handleRegisterRedBall(self, req):
+        res = RegisterRedBallResponse()
+        res.success = False
+        try:
+            self.trackerProxy.registerTarget("RedBall", req.diameter)
+            res.success = True
+            return res
+        except RuntimeError, e:
+            rospy.logerr("Exception caught:\n%s", e)
+            return res
+
+    def handleRegisterFace(self, req):
+        res = RegisterFaceResponse()
+        res.success = False
+        try:
+            self.trackerProxy.registerTarget("Face", req.width_of_face)
+            res.success = True
+            return res
+        except RuntimeError, e:
+            rospy.logerr("Exception caught:\n%s", e)
+            return res
+
+    def handleRegisterLandMark(self, req):
+        res = RegisterLandMarkResponse()
+        res.success = False
+        try:
+            data_list = [req.land_mark.size, req.land_mark.land_mark_id]
+            self.trackerProxy.registerTarget("LandMark", data_list)
+            res.success = True
+            return res
+        except RuntimeError, e:
+            rospy.logerr("Exception caught:\n%s", e)
+            return res
+
+    def handleRegisterLandMarks(self, req):
+        res = RegisterLandMarksResponse()
+        res.success = False
+        try:
+            data_list = []
+            for i in range (len(req.land_marks)):
+                data_list.append ([((req.land_marks)[i]).size, ((req.land_marks)[i]).land_mark_id])
+            self.trackerProxy.registerTarget("LandMarks", data_list)
+            res.success = True
+            return res
+        except RuntimeError, e:
+            rospy.logerr("Exception caught:\n%s", e)
+            return res
+
+    def handleRegisterPeople(self, req):
+        res = RegisterPeopleResponse()
+        res.success = False
+        try:
+            self.trackerProxy.registerTarget("People", req.people_id)
+            res.success = True
+            return res
+        except RuntimeError, e:
+            rospy.logerr("Exception caught:\n%s", e)
+            return res
+
+    def handleRegisterSound(self, req):
+        res = RegisterSoundResponse()
+        res.success = False
+        try:
+            self.trackerProxy.registerTarget("Sound", [req.distance, req.confidence])
+            res.success = True
+            return res
+        except RuntimeError, e:
+            rospy.logerr("Exception caught:\n%s", e)
+            return res
+
+    def handleSetEffector(self, req):
+        res = SetEffectorResponse()
+        res.success = False
+        try:
+            self.trackerProxy.setEffector(req.effector)
+            res.success = True
+            return res
+        except RuntimeError, e:
+            rospy.logerr("Exception caught:\n%s", e)
+            return res
+
+    def handleSetExtractorPeriod(self, req):
+        res = SetExtractorPeriodResponse()
+        res.success = False
+        try:
+            self.trackerProxy.setExtractorPeriod(req.target_name, req.period)
+            res.success = True
+            return res
+        except RuntimeError, e:
+            rospy.logerr("Exception caught:\n%s", e)
+            return res
+
+    def handleSetMaximumAcceleration(self, req):
+        res = SetMaximumAccelerationResponse()
+        res.success = False
+        try:
+            self.trackerProxy.setMaximumAcceleration(req.max_acceleration)
+            res.success = True
+            return res
+        except RuntimeError, e:
+            rospy.logerr("Exception caught:\n%s", e)
+            return res
+
+    def handleSetMaximumDistanceDetection(self, req):
+        res = SetMaximumDistanceDetectionResponse()
+        res.success = False
+        try:
+            self.trackerProxy.setMaximumDistanceDetection(req.max_distance)
+            res.success = True
+            return res
+        except RuntimeError, e:
+            rospy.logerr("Exception caught:\n%s", e)
+            return res
+
+    def handleSetMaximumVelocity(self, req):
+        res = SetMaximumVelocityResponse()
+        res.success = False
+        try:
+            self.trackerProxy.setMaximumVelocity(req.max_velocity)
+            res.success = True
+            return res
+        except RuntimeError, e:
+            rospy.logerr("Exception caught:\n%s", e)
+            return res
+
+    def handleSetMode(self, req):
+        res = SetModeResponse()
+        res.success = False
+        try:
+            self.trackerProxy.setMode(req.mode)
+            res.success = True
+            return res
+        except RuntimeError, e:
+            rospy.logerr("Exception caught:\n%s", e)
+            return res
+
+    def handleSetMoveConfig(self, req):
+        res = SetMoveConfigResponse()
+        res.success = False
+        try:
+            move_config = []
+            move_config.append(["MaxVelXY", req.move_config.max_vel_xy])
+            move_config.append(["MaxVelTheta", req.move_config.max_vel_theta])
+            move_config.append(["MaxAccXY", req.move_config.max_acc_xy])
+            move_config.append(["MaxAccTheta", req.move_config.max_acc_theta])
+            move_config.append(["MaxJerkXY", req.move_config.max_jerk_xy])
+            move_config.append(["MaxJerkTheta", req.move_config.max_jerk_theta])
+            move_config.append(["TorsoWy", req.move_config.torso_wy])
+            self.trackerProxy.setMoveConfig(move_config)
+            res.success = True
+            return res
+        except RuntimeError, e:
+            rospy.logerr("Exception caught:\n%s", e)
+            return res
+
+    def handleSetRelativePosition(self, req):
+        res = SetRelativePositionResponse()
+        res.success = False
+        try:
+            target_position = []
+            target_position.append(req.target.linear.x)
+            target_position.append(req.target.linear.y)
+            target_position.append(req.target.linear.z)
+            target_position.append(req.target.angular.x)
+            target_position.append(req.target.angular.y)
+            target_position.append(req.target.angular.z)
+            self.trackerProxy.setRelativePosition(target_position)
+            res.success = True
+            return res
+        except RuntimeError, e:
+            rospy.logerr("Exception caught:\n%s", e)
+            return res
+
+    # def handleSetTargetCoordinates(self, req):
+    #     try:
+    #         pass
+    #         return res
+    #     except RuntimeError, e:
+    #         rospy.logerr("Exception caught:\n%s", e)
+    #         return None
+
+    def handleSetSearchFractionMaxSpeed(self, req):
+        res = SetSearchFractionMaxSpeedResponse()
+        res.success = False
+        try:
+            self.trackerProxy.setSearchFractionMaxSpeed(req.fraction_max_speed)
+            res.success = True
+            return res
+        except RuntimeError, e:
+            rospy.logerr("Exception caught:\n%s", e)
+            return res
+
+    def handleSetTimeOut(self, req):
+        try:
+            res = SetTimeOutResponse()
+            res.timeout = self.trackerProxy.setTimeOut(req.timeout)
+            return res
+        except RuntimeError, e:
+            rospy.logerr("Exception caught:\n%s", e)
+            return None
+
+    def handleStopTracker(self, req):
+        try:
+            res = EmptyResponse()
             self.trackerProxy.stopTracker()
-            self.trackerProxy.unregisterTarget(self.targetName)
-            self.tracker = False
-            return EmptyResponse()
-
+            return res
         except RuntimeError, e:
             rospy.logerr("Exception caught:\n%s", e)
             return None
 
-    def reconfigure(self, request, level):
-        rospy.loginfo("""Reconfigure Request: {mode}, {effector}, {width}, {distanceX}, {thresholdX}, {distanceY}, {thresholdY}, {distanceWz}, {thresholdWz}""".format(**request))
-        #return request
-        newConf = {}
-        #Copy values
-        newConf["mode"] = request["mode"]
-        newConf["targetName"] = request["targetName"]
-        newConf["effector"] = request["effector"]
-        newConf["width"] = request["width"]
-        newConf["distanceX"] = request["distanceX"]
-        newConf["thresholdX"] = request["thresholdX"]
-        newConf["distanceY"] = request["distanceY"]
-        newConf["thresholdY"] = request["thresholdY"]
-        newConf["distanceWz"] = request["distanceWz"]
-        newConf["thresholdWz"] = request["thresholdWz"]
+    def handleTrack(self, req):
+        res = TrackResponse()
+        res.success = False
+        try:
+            self.trackerProxy.track(req.target_name)
+            res.success = True
+            return res
+        except RuntimeError, e:
+            rospy.logerr("Exception caught:\n%s", e)
+            return res
 
-        # Check and update values                                              
-        if not newConf["mode"]:
-            newConf["mode"] = self.trackerProxy.getMode()
-        elif newConf["mode"] not in self.trackerProxy.getAvailableModes():
-            rospy.logwarn(
-                "Unknown mode '{}'. Using current mode instead".format(
-                    newConf["mode"] ) )
-            rospy.loginfo("Modes available: {}".format(
-                self.trackerProxy.getAvailablModes()))
-            newConf["mode"] = self.trackerProxy.getMode()
-        if not newConf["targetName"]:
-            newConf["targetName"] = self.trackerProxy.getActiveTarget()
-        elif newConf["targetName"] not in ["RedBall", "Face", "LandMark", "LandMarks", "People", "Sound"]:
-            rospy.logwarn(
-                "Unknown target name '{}'. Using current targte name instead".format(
-                    newConf["targetName"] ) )
-            rospy.loginfo("Target Names available: RedBall, Face, LandMark, LandMarks, People, Sound")
-            newConf["mode"] = self.trackerProxy.getMode()
-        if not newConf["effector"]:
-            newConf["effector"] = self.trackerProxy.getEffector()
-        elif newConf["effector"] not in ["None", "Arms", "LArm", "RArm"]:
-            newConf["effector"] = self.trackerProxy.getEffector()
-            rospy.logwarn(
-                "Unknown effector '{}'. Using current effector instead".format(
-                    newConf["effector"] ) )
-            rospy.loginfo("Effectors available: None, Arms, LArm, RArm")
+    def handleToggleSearch(self, req):
+        res = ToggleSearchResponse()
+        res.success = False
+        try:
+            self.trackerProxy.toggleSearch(req.search_on)
+            res.success = True
+            return res
+        except RuntimeError, e:
+            rospy.logerr("Exception caught:\n%s", e)
+            return res
 
-        # # If first time and parameter not explicitly set                       
-        # if not self.conf and not rospy.has_param("~volume"):
-        #     newConf["volume"] = self.audio.getOutputVolume()
+    def handleUnregisterAllTargets(self, req):
+        try:
+            res = EmptyResponse()
+            self.trackerProxy.unregisterAllTargets()
+            return res
+        except RuntimeError, e:
+            rospy.logerr("Exception caught:\n%s", e)
+            return None
 
-        # # if srw is running and the vocabulary request is invalid, ignore it   
-        # if self.srw and not Util.parse_vocabulary(newConf["vocabulary"]):
-        #     rospy.logwarn("Empty vocabulary. Using current vocabulary instead")
-        #     newConf["vocabulary"] = self.conf["vocabulary"]
+    def handleUnregisterTarget(self, req):
+        res = UnregisterTargetResponse()
+        res.success = False
+        try:
+            self.trackerProxy.unregisterTarget(req.target_name)
+            res.success = True
+            return res
+        except RuntimeError, e:
+            rospy.logerr("Exception caught:\n%s", e)
+            return res
 
-        #  Check if we need to restart tracker
-        if self.tracker and self.conf and (
-                newConf["mode"] != self.conf["mode"] or
-                newConf["targetName"] != self.conf["targetName"] or
-                newConf["effector"] != self.conf["effector"] or
-                newConf["width"] != self.conf["width"] or
-                newConf["distanceX"] != self.conf["distanceX"] or
-                newConf["distanceY"] != self.conf["distanceY"] or
-                newConf["distanceWz"] != self.conf["distanceWz"] or
-                newConf["thresholdX"] != self.conf["thresholdX"] or
-                newConf["thresholdY"] != self.conf["thresholdY"] or
-                newConf["thresholdWz"] != self.conf["thresholdWz"]):
-            need_to_restart_tracker = True
-        else:
-            need_to_restart_tracker = False
-            self.conf = newConf
-
-        #If we have enabled the tracker wrapper, reconfigure it     
-        if need_to_restart_tracker:
-            self.conf = newConf
-            self.handleStopTrackerSrv()
-            self.handleStartTrackerSrv()
-        return self.conf
+    def handleUnregisterTargets(self, req):
+        res = UnregisterTargetsResponse()
+        res.success = False
+        try:
+            self.trackerProxy.unregisterTargets(req.target_names)
+            res.success = True
+            return res
+        except RuntimeError, e:
+            rospy.logerr("Exception caught:\n%s", e)
+            return res
 
     def run(self):
         while self.is_looping():
             try:
-                self.memProxy.subscribeToEvent("ALTracker/TargetLost", self.moduleName, "onTargetLost")
-                self.memProxy.subscribeToEvent("ALTracker/TargetReached", self.moduleName, "onTargetReached")
-                self.subscribeDone = True
-
-                if self.tracker:
-                    self.isTargetLost.data = self.trackerProxy.isTargetLost()
-                    self.isTargetLostPub.publish(self.isTargetLost)
-
-                if self.targetName == "People":
-                    data_list = self.memProxy.getDataList("PeoplePerception")
-                    for i in range (len(data_list)):
-                        if data_list[i] == "PeoplePerception/VisiblePeopleList":
-                            People_ID_list = self.memProxy.getData("PeoplePerception/VisiblePeopleList")
-                            if (len(People_ID_list)) > 0:
-                                self.People_ID = People_ID_list[0]
-                                self.trackerProxy.registerTarget(self.targetName, self.People_ID)
-                self.memProxy.subscribeToEvent("ALTracker/ActiveTargetChanged", self.moduleName, "onTargetChanged")
-                        
+                pass
+            
             except RuntimeError, e:
                 print "Error accessing ALMemory, exiting...\n"
                 print e
                 rospy.signal_shutdown("No NaoQI available anymore")
-
-    def onTargetChanged(self, key, value, message):
-        if value == self.targetName and not self.subscribeDone:
-            self.memProxy.subscribeToEvent("ALTracker/TargetLost", self.moduleName, "onTargetLost")
-            self.memProxy.subscribeToEvent("ALTracker/TargetReached", self.moduleName, "onTargetReached")
-            self.subscribeDone = True
-        elif value != self.targetName and self.subscribeDone:
-            self.memProxy.unsubscribeToEvent("ALTracker/TargetLost", self.moduleName)
-            self.memProxy.unsubscribeToEvent("ALTracker/TargetReached", self.moduleName)
-            self.subscribeDone = False
-    
-    # need to modify
-    def onTargetLost(self, key, value, message):
-        self.targetLost.data = True
-        self.targetLostPub.publish(self.targetLost)
-        print "target is lost"
-    # need to modify
-    def onTargetReached(self, key, value, message):
-        self.targetReached.data = True
-        self.targetReachedPub.publish(self.targetReached)
-        print "target is reached"
 
 if __name__ == '__main__':
     tracker = NaoqiTracker()

@@ -254,13 +254,14 @@ class NaoqiTracker (NaoqiNode):
         try:
             res = ALTrackerGetMoveConfigResponse()
             data_list = self.trackerProxy.getMoveConfig()
-            res.move_config.max_vel_xy = (data_list[0])[1]
-            res.move_config.max_vel_theta = (data_list[1])[1]
-            res.move_config.max_acc_xy = (data_list[2])[1]
-            res.move_config.max_acc_theta = (data_list[3])[1]
-            res.move_config.max_jerk_xy = (data_list[4])[1]
-            res.move_config.max_jerk_theta = (data_list[5])[1]
-            res.move_config.torso_wy = (data_list[6])[1]
+            if data_list is not None:
+                res.move_config.max_vel_xy = (data_list[0])[1]
+                res.move_config.max_vel_theta = (data_list[1])[1]
+                res.move_config.max_acc_xy = (data_list[2])[1]
+                res.move_config.max_acc_theta = (data_list[3])[1]
+                res.move_config.max_jerk_xy = (data_list[4])[1]
+                res.move_config.max_jerk_theta = (data_list[5])[1]
+                res.move_config.torso_wy = (data_list[6])[1]
             return res
         except RuntimeError, e:
             rospy.logerr("Exception caught:\n%s", e)

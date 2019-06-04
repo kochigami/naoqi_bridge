@@ -22,7 +22,8 @@ from naoqi_driver.naoqi_node import NaoqiNode
 
 from dynamic_reconfigure.server import Server
 from naoqi_sensors_py.cfg import NaoqiMicrophoneConfig
-from naoqi_bridge_msgs.msg import AudioBuffer
+#from naoqi_bridge_msgs.msg import AudioBuffer
+from audio_common_msgs.msg import AudioData
 
 from naoqi import ALModule, ALBroker, ALProxy
 
@@ -56,7 +57,7 @@ class NaoqiMic (ALModule, NaoqiNode):
         self.config = defaultdict(returnNone)
 
         # ROS publishers
-        self.pub_audio_ = rospy.Publisher('~audio_raw', AudioBuffer)
+        self.pub_audio_ = rospy.Publisher('audio', AudioData)
 
         # initialize the parameter server
         self.srv = Server(NaoqiMicrophoneConfig, self.reconfigure)
@@ -74,7 +75,7 @@ class NaoqiMic (ALModule, NaoqiNode):
         # check if we are already subscribed
         if not self.isSubscribed:
             rospy.loginfo('subscribed to audio proxy, since this is the first listener')
-            self.audioProxy.setClientPreferences(self.getName(), new_config['frequency'], 0, 0)
+            self.audioProxy.setClientPreferences(self.getName(), new_config['frequency'], 3, 0)
             self.audioProxy.subscribe(self.getName())
             self.isSubscribed = True
 
@@ -103,31 +104,41 @@ class NaoqiMic (ALModule, NaoqiNode):
         self.isSubscribed=False
 
     def processRemote(self, nbOfInputChannels, fNbOfInputSamples, timeStamp, inputBuff):
-        audio_msg = AudioBuffer()
+        #audio_msg = AudioBuffer()
+        audio_msg = AudioData()
 
         # Deal with the sound
         # get data directly with the _getInputBuffer() function because inputBuff is corrupted in python
         mictmp = []
-        for i in range (0,len(inputBuff)/2) :
-            mictmp.append(ord(inputBuff[2*i])+ord(inputBuff[2*i+1])*256)
 
-        # convert 16 bit samples to signed 16 bits samples
-        for i in range (0,len(mictmp)) :
-            if mictmp[i]>=32768 :
-                mictmp[i]=mictmp[i]-65536
+        for i in range (0,len(inputBuff)) :
+            mictmp.append(ord(inputBuff[i]))
+        
+        # for i in range (0,len(inputBuff)/2) :
+        #     mictmp.append(ord(inputBuff[2*i])+ord(inputBuff[2*i+1])*256)
 
-        if self.config['use_ros_time']:
-            audio_msg.header.stamp = rospy.Time.now()
-        else:
-            audio_msg.header.stamp = rospy.Time(timeStamp)
+        # # convert 16 bit samples to signed 16 bits samples
+        # for i in range (0,len(mictmp)) :
+        #     if mictmp[i]>=32768 :
+        #         mictmp[i]=mictmp[i]-65536
+        # if self.config['use_ros_time']:
+        #     print "7"
+        #     audio_msg.header.stamp = rospy.Time.now()
+        #     print "9"
+        # else:
+        #     print "8"
+        # audio_msg.header.stamp = rospy.Time(timeStamp)
 
-        audio_msg.frequency = self.config['frequency']
-        if self.microVersion == 0:
-            channels = [0,2,1,4]
-        else:
-            channels = [3,5,0,2]
-
-        audio_msg.channelMap = channels
+        # print "2"
+            
+        # audio_msg.frequency = self.config['frequency']
+        # print "3"
+        # if self.microVersion == 0:
+        #     channels = [0,2,1,4]
+        # else:
+        #     channels = [3,5,0,2]
+        # print "4"
+        # audio_msg.channelMap = channels
 
         audio_msg.data = mictmp
         self.pub_audio_.publish(audio_msg)

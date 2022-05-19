@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 
 import rospy
+import qi
+import sys
+import time
 from naoqi_driver.naoqi_node import NaoqiNode
 from std_srvs.srv import (
     EmptyResponse,
@@ -25,6 +28,7 @@ class NaoqiTablet(NaoqiNode):
         self.hideImageSrv = rospy.Service("hide_image", Empty, self.handleHideImageSrv)
         self.showAppSrv = rospy.Service("show_app", SetString, self.handleShowAppSrv)
         self.showWebViewSrv = rospy.Service("show_webview", SetString, self.handleShowWebviewSrv)
+        self.executeJSSrv = rospy.Service("execute_js", SetString, self.handleExecuteJSSrv)
         self.setImagePathSrv = rospy.Service("set_show_image_folder_path", SetString, self.handleSetFolderPathSrv)
         self.getImagePathSrv = rospy.Service("get_show_image_folder_path", GetString, self.handleGetFolderPathSrv)
         self.configureWifiSrv = rospy.Service("configure_wifi", ConfigureWifi, self.handleConfigureWifiSrv)
@@ -38,7 +42,10 @@ class NaoqiTablet(NaoqiNode):
     
     def connectNaoQi(self):
         rospy.loginfo("Connecting to NaoQi at %s:%d", self.pip, self.pport)
-        self.tabletProxy = self.get_proxy("ALTabletService")
+        #self.tabletProxy = self.get_proxy("ALTabletService")
+        self.session = qi.Session()
+        self.session.connect("tcp://%s:%s" % (self.pip, self.pport))
+        self.tabletProxy = self.session.service("ALTabletService")
         if self.tabletProxy is None:
             rospy.logerr("Could not get a proxy to ALTabletService")
             rospy.logerr("Please make sure that your robot has a tablet.")
@@ -117,6 +124,57 @@ class NaoqiTablet(NaoqiNode):
         except RuntimeError, e:
             rospy.logerr("Exception caught:\n%s", e)
             return None
+
+    def handleExecuteJSSrv(self, req):
+        res = SetStringResponse()
+        res.success = False
+        try:
+            # reference: http://doc.aldebaran.com/2-5/naoqi/core/altabletservice-api.html#ALTabletService::executeJS__ssCR
+            # Display a local web page located in boot-config/html folder
+            # The ip of the robot from the tablet is 198.18.0.1
+            self.tabletProxy.showWebview("http://198.18.0.1/apps/boot-config/preloading_dialog.html")
+
+            time.sleep(3)
+
+            # Javascript script for displaying a prompt
+            # ALTabletBinding is a javascript binding inject in the web page displayed on the tablet
+            # script = """
+            # var name = prompt("Please enter your name", "Harry Pepper");
+            # ALTabletBinding.raiseEvent(name)
+            # """
+            script = req.data
+
+            # Don't forget to disconnect the signal at the end
+            signalID = 0
+
+            # function called when the signal onJSEvent is triggered
+            # by the javascript function ALTabletBinding.raiseEvent(name)
+            def callback(event):
+                print "input data:", event
+                promise.setValue(True)
+
+            promise = qi.Promise()
+
+            # attach the callback function to onJSEvent signal
+            signalID = self.tabletProxy.onJSEvent.connect(callback)
+
+            # inject and execute the javascript in the current web page displayed
+            self.tabletProxy.executeJS(script)
+
+            try:
+                promise.future().hasValue(30000)
+                res.success = True
+            except RuntimeError:
+                raise RuntimeError('Timeout: no signal triggered')
+
+        except Exception, e:
+            print "Error was:", e
+
+        # Hide the web view
+        self.tabletProxy.hideWebview()
+        # disconnect the signal
+        self.tabletProxy.onJSEvent.disconnect(signalID)
+        return res
 
     def handleSetFolderPathSrv(self, req):
         res = SetStringResponse()

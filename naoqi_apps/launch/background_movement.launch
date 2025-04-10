@@ -7,7 +7,8 @@
 
   <arg name="nao_ip" default="$(optenv NAO_IP 127.0.0.1)" />
   <arg name="nao_port" default="$(optenv NAO_PORT 9559)" />
+  <arg name="user" default="nao" />
   <arg name="password" default="no_password" />
   
-  <node pkg="naoqi_apps" type="naoqi_background_movement.py" name="naoqi_background_movement" required="true" args="--pip=$(arg nao_ip) --pport=$(arg nao_port) --password=$(arg password)"  />
+  <node pkg="naoqi_apps" type="naoqi_background_movement.py" name="naoqi_background_movement" required="true" args="--pip=$(arg nao_ip) --pport=$(arg nao_port) --user=$(arg user) --password=$(arg password)"  />
 </launch>
